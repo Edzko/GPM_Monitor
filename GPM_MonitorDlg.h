@@ -50,14 +50,15 @@ public:
 	FILE *logFile;
 	char logFilename[100];
 
-	CButton *pAutoConnect, *pServer;
-	CComboBox *pCOMList, *pSvrCOMList;
+	CButton *pAutoConnect, *pServer, *pSimulink;
+	CComboBox *pCOMList, *pSvrCOMList, *pSimulinkCOMList;
 
 	sockaddr_in si_other;
 	SOCKET gpmSock;
 	bool upgrading;
 	bool ambootloader;
 	bool svrrunning;
+	bool simrunning;
 	int svrcom;
 	unsigned int crc;
 	int iFW, nFW, wFW;
@@ -65,16 +66,13 @@ public:
 
 	void Send(char *msg, int len);
 	void Recv(char *msg, int *len);
-	void StartServer();
-		
+	
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
-
 
 // Implementation
 protected:
 	HICON m_hIcon;
-
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -84,13 +82,14 @@ protected:
 public:
 	afx_msg void OnBnClickedConnect();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
-
 	afx_msg void OnBnClickedReset();
 	afx_msg void OnDestroy();
-	
 	afx_msg void OnBnClickedUpdate();
 	afx_msg void OnBnClickedAutoconnect();
 	afx_msg void OnBnClickedServer();
 	afx_msg void OnBnClickedSvrconnect();
 	afx_msg void OnCbnSelchangeSvrcomlist();
+	afx_msg void OnBnClickedSimulinkconnect();
+	afx_msg void OnBnClickedSimulink();
+	afx_msg void OnSelchangeSimulinkcomlist();
 };

@@ -23,8 +23,8 @@ CGPM_MonitorApp::CGPM_MonitorApp()
 {
 	EnableHtmlHelp();
 
-	// TODO: add construction code here,
-	// Place all significant initialization in InitInstance
+	m_pDiscoverThread = NULL;
+	m_pSimulinkThread = NULL;
 }
 
 

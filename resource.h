@@ -8,6 +8,7 @@
 #define IDC_UPDATE                      5
 #define IDC_RESET2                      6
 #define IDC_SVRCONNECT                  6
+#define IDC_SIMULINKCONNECT             7
 #define IDM_ABOUTBOX                    0x0010
 #define IDD_ABOUTBOX                    100
 #define IDS_ABOUTBOX                    101
@@ -19,6 +20,7 @@
 #define IDC_CHK1                        1002
 #define IDC_SVRCOMLIST                  1002
 #define IDC_CHK2                        1003
+#define IDC_SIMULINKCOMLIST             1003
 #define IDC_CHK3                        1004
 #define IDC_CHK4                        1005
 #define IDC_VERSION                     1010
@@ -46,6 +48,9 @@
 #define IDC_SERVER                      1029
 #define IDC_BUTTON1                     1030
 #define IDC_SVRPORT                     1031
+#define IDC_SIMULINK                    1032
+#define IDC_SIMULINKPORT                1033
+#define IDC_SIMULINKIP                  1034
 
 // Next default values for new objects
 // 

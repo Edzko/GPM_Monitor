@@ -18,7 +18,7 @@ class CGPM_MonitorApp : public CWinApp
 {
 public:
 	CGPM_MonitorApp();
-	CWinThread *m_pDiscoverThread, *m_pServerThread;
+	CWinThread *m_pDiscoverThread, *m_pServerThread, *m_pSimulinkThread;
 
 // Overrides
 	public:

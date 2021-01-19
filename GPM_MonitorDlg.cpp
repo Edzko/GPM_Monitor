@@ -18,8 +18,9 @@
 char fwdata[MAX_FWSIZE];
 char usbdata[MAX_FWSIZE];
 
-UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam);
-UINT __cdecl ProcServerThreadFunction(LPVOID pParam);
+extern UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam);
+extern UINT __cdecl ProcServerThreadFunction(LPVOID pParam);
+extern UINT __cdecl ProcSimulinkThreadFunction(LPVOID pParam);
 
 // CAboutDlg dialog used for App About
 
@@ -71,6 +72,7 @@ CGPM_MonitorDlg::CGPM_MonitorDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CGPM_MonitorDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	//CommTimeouts = NULL;
 }
 
 void CGPM_MonitorDlg::DoDataExchange(CDataExchange* pDX)
@@ -85,16 +87,17 @@ BEGIN_MESSAGE_MAP(CGPM_MonitorDlg, CDialog)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_CONNECT, &CGPM_MonitorDlg::OnBnClickedConnect)
 	ON_WM_TIMER()
-	
 	ON_BN_CLICKED(IDC_RESET, &CGPM_MonitorDlg::OnBnClickedReset)
 	ON_WM_DESTROY()
 	ON_WM_MOUSEWHEEL()
-	
 	ON_BN_CLICKED(IDC_UPDATE, &CGPM_MonitorDlg::OnBnClickedUpdate)
 	ON_BN_CLICKED(IDC_AUTOCONNECT, &CGPM_MonitorDlg::OnBnClickedAutoconnect)
 	ON_BN_CLICKED(IDC_SERVER, &CGPM_MonitorDlg::OnBnClickedServer)
 	ON_BN_CLICKED(IDC_SVRCONNECT, &CGPM_MonitorDlg::OnBnClickedSvrconnect)
 	ON_CBN_SELCHANGE(IDC_SVRCOMLIST, &CGPM_MonitorDlg::OnCbnSelchangeSvrcomlist)
+	ON_BN_CLICKED(IDC_SIMULINKCONNECT, &CGPM_MonitorDlg::OnBnClickedSimulinkconnect)
+	ON_BN_CLICKED(IDC_SIMULINK, &CGPM_MonitorDlg::OnBnClickedSimulink)
+	ON_CBN_SELCHANGE(IDC_SIMULINKCOMLIST, &CGPM_MonitorDlg::OnSelchangeSimulinkcomlist)
 END_MESSAGE_MAP()
 
 
@@ -210,16 +213,34 @@ BOOL CGPM_MonitorDlg::OnInitDialog()
 
 	pCOMList = (CComboBox*)GetDlgItem(IDC_COMLIST);
 	GetCOMPorts(pCOMList);
+	CString portname = AfxGetApp()->GetProfileString("", "Port", "");
+	if (pCOMList->SelectString(0, portname) >= 0)
+	{
+		int iCOM = AfxGetApp()->GetProfileInt("", "COM", 0);
+		if ((iCOM >= 0) && (pCOMList->GetCount() >= iCOM))
+			pCOMList->SetCurSel(iCOM);
+		else pCOMList->SetCurSel(0);
+	}
+
 	pSvrCOMList = (CComboBox*)GetDlgItem(IDC_SVRCOMLIST);
 	GetCOMPorts(pSvrCOMList);
-	CEdit *pPort = (CEdit*)GetDlgItem(IDC_SVRPORT);
+	CEdit* pPort = (CEdit*)GetDlgItem(IDC_SVRPORT);
 	SetDlgItemText(IDC_SVRPORT, "2000");
 	pPort->EnableWindow(0);
+	portname = AfxGetApp()->GetProfileString("", "server", "");
+	pSvrCOMList->SelectString(0, portname);
 
-	int iCOM = AfxGetApp()->GetProfileInt("","COM",0);
-	if ((iCOM>=0) && (pCOMList->GetCount()>=iCOM)) 
-		pCOMList->SetCurSel(iCOM); 
-	else pCOMList->SetCurSel(0);
+
+	pSimulinkCOMList = (CComboBox*)GetDlgItem(IDC_SIMULINKCOMLIST);
+	GetCOMPorts(pSimulinkCOMList);
+	pPort = (CEdit*)GetDlgItem(IDC_SIMULINKPORT);
+	SetDlgItemText(IDC_SIMULINKPORT, "9999");
+	pPort->EnableWindow(0);
+	SetDlgItemText(IDC_SIMULINKIP, "192.168.140.203");
+	portname = AfxGetApp()->GetProfileString("", "simulink_com", "");
+	pSimulinkCOMList->SelectString(0, portname);
+
+
 	Connected = 0;
 	hCommPort = 0;
 	upgrading = false;
@@ -229,24 +250,8 @@ BOOL CGPM_MonitorDlg::OnInitDialog()
 	pFW->EnableWindow(false);
 
 	theApp.m_pDiscoverThread = AfxBeginThread(&ProcDiscoverThreadFunction, this);
-
 	
 	logFile = NULL;
-
-	CString portname = AfxGetApp()->GetProfileString("","Port","");
-	pCOMList->SelectString(0,portname);
-	/*
-	for (int i=0;i<pCOMList->GetCount();i++)
-	{
-		CString lbportname;
-		pCOMList->GetLBText(i,&lbportname);
-		if (portname==lbportname)
-		{
-			pCOMList->SelectString(0,portname);
-			break;
-		}
-	}
-	*/
 
 	pAutoConnect = (CButton*)GetDlgItem(IDC_AUTOCONNECT);
 	int autoConnect = AfxGetApp()->GetProfileInt("", "autoConnect", 0);
@@ -254,17 +259,17 @@ BOOL CGPM_MonitorDlg::OnInitDialog()
 		pAutoConnect->SetCheck(BST_CHECKED);
 		OnBnClickedConnect();
 	}
-
-	pSvrCOMList = (CComboBox*)GetDlgItem(IDC_SVRCOMLIST);
-	portname = AfxGetApp()->GetProfileString("", "server", "");
-	pSvrCOMList->SelectString(0, portname);
-	int icom = pSvrCOMList->GetCurSel();
-	svrcom = (int)pSvrCOMList->GetItemData(icom);
-
+	
 	pServer = (CButton*)GetDlgItem(IDC_SERVER);
 	int tcpServer = AfxGetApp()->GetProfileInt("", "tcpServer", 0);
 	if (tcpServer) pServer->SetCheck(BST_CHECKED);
 	svrrunning = false;
+
+	pSimulink = (CButton*)GetDlgItem(IDC_SIMULINK);
+	int sim = AfxGetApp()->GetProfileInt("", "simulink", 0);
+	if (sim) pServer->SetCheck(BST_CHECKED);
+	simrunning = false;
+
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -344,7 +349,7 @@ void CGPM_MonitorDlg::Send(char *msg, int len)
 		fSuccess = WriteFile(hCommPort,msg,len,&nc,NULL);
 		if (fSuccess == 0) { 
 			int nErr = GetLastError();
-			char errMsg[250];
+			char errMsg[500];
 			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
 			TRACE1("Error: %s\r\n", errMsg);
 		}
@@ -800,50 +805,6 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 }
 
 
-UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam)
-{
-	CGPM_MonitorDlg*  dlg = (CGPM_MonitorDlg*)pParam;
-	sockaddr_in si_me;
-	SOCKET s;
-	s = socket(AF_INET, SOCK_DGRAM, 0);   // UDP
-	int port = 55555;
-	char broadcast = 1;
-	bool found = false;
-	//setsockopt(s, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
-
-	memset(&si_me, 0, sizeof(si_me));
-	si_me.sin_family = AF_INET;
-	si_me.sin_port = htons(port);
-	si_me.sin_addr.s_addr = INADDR_ANY;
-
-	int timeout = 500;
-	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
-
-	bind(s, (sockaddr *)&si_me, sizeof(sockaddr));
-
-	while (!found)
-	{
-		char buf[10000];
-		int slen = sizeof(sockaddr);
-		if (recvfrom(s, buf, sizeof(buf) - 1, 0, (sockaddr *)&dlg->si_other, &slen) > 0)
-		{
-			char txt[100];
-
-			sprintf_s(txt, 100, "WiFi (%i.%i.%i.%i)\r\n", dlg->si_other.sin_addr.S_un.S_un_b.s_b1,
-				dlg->si_other.sin_addr.S_un.S_un_b.s_b2,
-				dlg->si_other.sin_addr.S_un.S_un_b.s_b3,
-				dlg->si_other.sin_addr.S_un.S_un_b.s_b4);
-			int iList = dlg->pCOMList->AddString(txt);
-			dlg->pCOMList->SetItemData(iList, 100);
-
-			found = true;
-		}
-		Sleep(100);
-	}
-
-	AfxEndThread(0);
-	return false;
-}
 
 void CGPM_MonitorDlg::OnBnClickedAutoconnect()
 {
@@ -856,220 +817,11 @@ void CGPM_MonitorDlg::OnBnClickedServer()
 	AfxGetApp()->WriteProfileInt(NULL, "tcpServer", pServer->GetCheck());
 }
 
-
-// see https://docs.microsoft.com/en-us/windows/win32/winsock/complete-server-code
-UINT __cdecl ProcServerThreadFunction(LPVOID pParam)
+void CGPM_MonitorDlg::OnBnClickedSimulink()
 {
-	CGPM_MonitorDlg*  dlg = (CGPM_MonitorDlg*)pParam;
-
-	char port[50];
-	struct addrinfo *result = NULL;
-	struct addrinfo hints; 
-	int iResult;
-	int iSendResult;
-	char recvbuf[512];
-	int recvbuflen = 512;
-	SOCKET clSock;
-	char svrbuf[512];
-	int svrlen;
-	char CommPort[100];
-	int fSuccess;
-	DCB dcbCommPort;
-	COMMTIMEOUTS CommTimeouts;
-	
-	//int com = (int)pCom->GetItemData(pCom->GetCurSel());
-
-	GetDlgItemText(dlg->m_hWnd, IDC_SVRPORT, port, 50);
-
-	// Open COM server port
-	
-	sprintf_s(CommPort, 20, "\\\\.\\COM%i", dlg->svrcom);
-
-	HANDLE hCommPort = CreateFile(CommPort, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hCommPort == INVALID_HANDLE_VALUE) {
-		DWORD dwError = GetLastError();
-		char errMsg[500];
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, errMsg, 500, NULL);
-		TRACE1("Error: %s\r\n", errMsg);
-		AfxEndThread(0);
-		return 0;
-	}
-	fSuccess = GetCommState(hCommPort, &dcbCommPort);
-	if (!fSuccess) {
-		AfxEndThread(0);
-		return 0;
-	}
-	int baudRate = 57600;
-	dcbCommPort.DCBlength = sizeof(DCB);
-	dcbCommPort.BaudRate = baudRate;
-	dcbCommPort.ByteSize = 8;
-	dcbCommPort.Parity = NOPARITY;
-	dcbCommPort.StopBits = ONESTOPBIT;
-	dcbCommPort.fInX = FALSE;
-	dcbCommPort.fOutX = FALSE;
-	dcbCommPort.fOutxCtsFlow = FALSE;
-	dcbCommPort.fOutxDsrFlow = FALSE;
-	dcbCommPort.fDtrControl = DTR_CONTROL_ENABLE;
-	dcbCommPort.fRtsControl = RTS_CONTROL_ENABLE;
-	fSuccess = SetCommState(hCommPort, &dcbCommPort);
-	if (!fSuccess) {
-		AfxEndThread(0);
-		return 0;
-	}
-
-	// modify COM port settings for polling
-	CommTimeouts.ReadIntervalTimeout = 10;
-	CommTimeouts.ReadTotalTimeoutMultiplier = 0;
-	CommTimeouts.ReadTotalTimeoutConstant = 100;
-	CommTimeouts.WriteTotalTimeoutMultiplier = 1;
-	CommTimeouts.WriteTotalTimeoutConstant = 0;
-	fSuccess = SetCommTimeouts(hCommPort, &CommTimeouts);
-
-	// Setup Network Server
-	ZeroMemory(&hints, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
-	hints.ai_flags = AI_PASSIVE; 
-	
-	iResult = getaddrinfo(NULL, port, &hints, &result);
-	if (iResult != 0) {
-		TRACE1("getaddrinfo failed with error: %d\n", iResult);
-		AfxEndThread(0);
-		return 0;
-	}
-	SOCKET svrSock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-	if (svrSock == INVALID_SOCKET) {
-		TRACE1("socket failed with error: %ld\n", WSAGetLastError());
-		AfxEndThread(0);
-		return 0;
-	}
-	int timeout = 100;
-	iResult = setsockopt(svrSock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
-
-	u_long iMode = 1;
-	iResult = ioctlsocket(svrSock, FIONBIO, &iMode);
-	if (iResult == SOCKET_ERROR) {
-		TRACE1("ioctl blocking call failed with error: %d\n", WSAGetLastError());
-		closesocket(svrSock);
-		AfxEndThread(0);
-		return 0;
-	}
-
-	iResult = bind(svrSock, result->ai_addr, (int)result->ai_addrlen);
-	if (iResult == SOCKET_ERROR) {
-		TRACE1("bind failed with error: %d\n", WSAGetLastError());
-		closesocket(svrSock);
-		AfxEndThread(0);
-		return 0;
-	}
-	freeaddrinfo(result);
-	iResult = listen(svrSock, SOMAXCONN);
-	if (iResult == SOCKET_ERROR) {
-		TRACE1("listen failed with error: %d\n", WSAGetLastError());
-		closesocket(svrSock);
-	}
-
-	svrlen = 0;
-	dlg->svrrunning = true;
-	dlg->SetDlgItemText(IDC_SVRCONNECT, "Disconnect");
-	dlg->pSvrCOMList->EnableWindow(false);
-
-	while (dlg->svrrunning)
-	{
-		clSock = accept(svrSock, NULL, NULL);
-		if (clSock == INVALID_SOCKET) {
-			int nErr = WSAGetLastError();
-			if (nErr == WSAEWOULDBLOCK) Sleep(100);
-			else {
-				TRACE1("accept failed with error: %d\n", nErr);
-				closesocket(clSock);
-				WSACleanup();
-				dlg->svrrunning = false;
-				dlg->SetDlgItemText(IDC_SVRCONNECT, "Connect");
-				dlg->pSvrCOMList->EnableWindow(true);
-				AfxEndThread(0);
-				return 0;
-			}
-		}
-		
-
-		// Receive until the peer shuts down the connection
-		if (clSock != INVALID_SOCKET) {
-			do {
-				DWORD nc;
-				iResult = recv(clSock, recvbuf, recvbuflen, 0);
-				if (iResult > 0) {
-					recvbuf[iResult] = 0;
-					TRACE("Bytes received from client: %d\n", iResult);
-					// Send to GPM
-
-					fSuccess = WriteFile(hCommPort, recvbuf, iResult - 1, &nc, NULL);
-					if (fSuccess == 0) {
-						int nErr = GetLastError();
-						char errMsg[250];
-						FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-						TRACE1("Error sending to GPM: %s\r\n", errMsg);
-					}
-				}
-				else if (iResult == 0) {
-					TRACE("Connection closing...\n");
-					break;
-				}
-				else {
-					int nErr = WSAGetLastError();
-					if ((nErr != WSAEWOULDBLOCK) && (nErr != WSAETIMEDOUT))
-					{
-						printf("Recv from Client failed with error: %d\n", nErr);
-						closesocket(clSock);
-						break;
-					}
-				}
-
-				iResult = ReadFile(hCommPort, svrbuf, 512, (LPDWORD)&nc, NULL);
-				if (iResult == 0) {
-					int nErr = GetLastError();
-					char errMsg[250];
-					FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-					TRACE1("Error receiving from GPM: %s\r\n", errMsg);
-					iResult = 1;
-				}
-				if (nc > 0)
-				{
-					iSendResult = send(clSock, svrbuf, nc, 0);
-					if (iSendResult == SOCKET_ERROR) {
-						TRACE1("Send to Client failed with error: %d\n", WSAGetLastError());
-						closesocket(clSock);
-						break;
-					}
-					TRACE1("Bytes sent to Client: %d\n", iSendResult);
-				}
-
-				//Sleep(10);
-
-			} while ((iResult != 0) && (dlg->svrrunning));
-
-			// shutdown the connection since we're done
-			iResult = shutdown(clSock, SD_SEND);
-			if (iResult == SOCKET_ERROR) {
-				TRACE1("shutdown failed with error: %d\n", WSAGetLastError());
-				closesocket(clSock);
-
-			}
-			// cleanup
-			closesocket(clSock);
-		}
-	}
-	// No longer need server socket
-	CancelIo(hCommPort);
-	CloseHandle(hCommPort);
-	closesocket(svrSock);
-	dlg->SetDlgItemText(IDC_SVRCONNECT, "Connect");
-	dlg->pSvrCOMList->EnableWindow(true);
-	dlg->svrrunning = false;
-	AfxEndThread(0);
-	return 0;
+	AfxGetApp()->WriteProfileInt(NULL, "simulink", pSimulink->GetCheck());
 }
+
 
 void CGPM_MonitorDlg::OnBnClickedSvrconnect()
 {
@@ -1096,10 +848,39 @@ void CGPM_MonitorDlg::OnBnClickedSvrconnect()
 
 void CGPM_MonitorDlg::OnCbnSelchangeSvrcomlist()
 {
-	int icom = pSvrCOMList->GetCurSel();
-	svrcom = (int)pSvrCOMList->GetItemData(icom);
-
 	CString portname;
 	pSvrCOMList->GetLBText(pSvrCOMList->GetCurSel(), portname);
 	AfxGetApp()->WriteProfileString("", "server", portname);
+}
+
+
+void CGPM_MonitorDlg::OnBnClickedSimulinkconnect()
+{
+	if (simrunning)
+	{
+		simrunning = false;
+		/*
+		Sleep(100);
+
+		SetDlgItemText(IDC_SVRCONNECT, "Connect");
+		pSvrCOMList->EnableWindow(true);
+		svrrunning = false;
+
+		//theApp.m_pServerThread->Delete();
+		::TerminateThread(theApp.m_pServerThread->m_hThread, 0);
+		CloseHandle(theApp.m_pServerThread->m_hThread);
+		*/
+	}
+	else
+		theApp.m_pServerThread = AfxBeginThread(&ProcSimulinkThreadFunction, this);
+}
+
+
+
+
+void CGPM_MonitorDlg::OnSelchangeSimulinkcomlist()
+{
+	CString portname;
+	pSimulinkCOMList->GetLBText(pSimulinkCOMList->GetCurSel(), portname);
+	AfxGetApp()->WriteProfileString("", "simulink_com", portname);
 }
