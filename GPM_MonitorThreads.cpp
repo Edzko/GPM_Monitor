@@ -50,10 +50,11 @@ UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam)
 		Sleep(100);
 	}
 
-	int iCOM = AfxGetApp()->GetProfileInt("", "COM", 0);
-	if ((iCOM >= 0) && (dlg->pCOMList->GetCount() >= iCOM))
-		dlg->pCOMList->SetCurSel(iCOM);
-	else dlg->pCOMList->SetCurSel(0);
+	CString portname = AfxGetApp()->GetProfileString("", "Port", "");
+	dlg->pCOMList->SelectString(0, portname);
+	CButton* pButton = (CButton*)dlg->GetDlgItem(IDC_CONNECT);
+	if (dlg->pAutoConnect->GetCheck())
+		dlg->PostMessage(WM_COMMAND, MAKEWPARAM(IDC_CONNECT, BN_CLICKED), (LPARAM)pButton->m_hWnd);
 
 	AfxEndThread(0);
 	return false;
@@ -65,6 +66,7 @@ UINT __cdecl ProcServerThreadFunction(LPVOID pParam)
 	CGPM_MonitorDlg* dlg = (CGPM_MonitorDlg*)pParam;
 
 	char port[50];
+	
 	struct addrinfo* result = NULL;
 	struct addrinfo hints;
 	int iResult;
@@ -82,7 +84,13 @@ UINT __cdecl ProcServerThreadFunction(LPVOID pParam)
 	//int com = (int)pCom->GetItemData(pCom->GetCurSel());
 
 	GetDlgItemText(dlg->m_hWnd, IDC_SVRPORT, port, 50);
-
+	GetDlgItemText(dlg->m_hWnd, IDC_SVRCOMLIST, CommPort, 100);
+	char* pcom = strstr(CommPort, "COM");
+	if (pcom == NULL) {
+		AfxEndThread(0);
+		return 0;
+	}
+	dlg->svrcom = atoi(pcom + 3);
 	// Open COM server port
 
 	sprintf_s(CommPort, 20, "\\\\.\\COM%i", dlg->svrcom);
@@ -207,7 +215,7 @@ UINT __cdecl ProcServerThreadFunction(LPVOID pParam)
 					TRACE("Bytes received from client: %d\n", iResult);
 					// Send to GPM
 
-					fSuccess = WriteFile(hCommPort, recvbuf, iResult - 1, &nc, NULL);
+					fSuccess = WriteFile(hCommPort, recvbuf, iResult, &nc, NULL);
 					if (fSuccess == 0) {
 						int nErr = GetLastError();
 						char errMsg[250];
@@ -334,7 +342,15 @@ UINT __cdecl ProcSimulinkThreadFunction(LPVOID pParam)
 	CommTimeouts.WriteTotalTimeoutConstant = 0;
 	fSuccess = SetCommTimeouts(hCommPort, &CommTimeouts);
 
-	
+	// Activate stream
+	DWORD nc;
+	fSuccess = WriteFile(hCommPort, "UB10\r", 5, &nc, NULL);
+	if (fSuccess == 0) {
+		int nErr = GetLastError();
+		char errMsg[250];
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
+		TRACE1("Error sending to GPM: %s\r\n", errMsg);
+	}
 
 
 	SOCKET simSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -377,10 +393,11 @@ UINT __cdecl ProcSimulinkThreadFunction(LPVOID pParam)
 	dlg->SetDlgItemText(IDC_SVRCONNECT, "Disconnect");
 	dlg->pSimulinkCOMList->EnableWindow(false);
 
+	clock_t t0 = clock();
+
 	while (dlg->simrunning)
 	{
 		
-		DWORD nc;
 		iResult = recvfrom(simSock, recvbuf, recvbuflen, 0, (struct sockaddr *) &sa, &salen);
 		if (iResult > 0) {
 			if (iResult >= 512) iResult = 511;
@@ -420,6 +437,13 @@ UINT __cdecl ProcSimulinkThreadFunction(LPVOID pParam)
 		}
 		if (nc > 0)
 		{
+			clock_t t = clock();
+			dlg->sim_dt = (int)(1000 * (t - t0) / CLOCKS_PER_SEC);
+			t0 = t;
+			dlg->sim_cnt++;
+			dlg->sim_n = nc;
+
+
 			iSendResult = sendto(simSock, svrbuf, nc, 0, (struct sockaddr*) &sa, sizeof(sa));
 			if (iSendResult == SOCKET_ERROR) {
 				TRACE1("Send to Client failed with error: %d\n", WSAGetLastError());

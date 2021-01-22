@@ -214,12 +214,9 @@ BOOL CGPM_MonitorDlg::OnInitDialog()
 	pCOMList = (CComboBox*)GetDlgItem(IDC_COMLIST);
 	GetCOMPorts(pCOMList);
 	CString portname = AfxGetApp()->GetProfileString("", "Port", "");
-	if (pCOMList->SelectString(0, portname) >= 0)
+	if (pCOMList->SelectString(0, portname) == CB_ERR)
 	{
-		int iCOM = AfxGetApp()->GetProfileInt("", "COM", 0);
-		if ((iCOM >= 0) && (pCOMList->GetCount() >= iCOM))
-			pCOMList->SetCurSel(iCOM);
-		else pCOMList->SetCurSel(0);
+		pCOMList->SetCurSel(0);
 	}
 
 	pSvrCOMList = (CComboBox*)GetDlgItem(IDC_SVRCOMLIST);
@@ -257,7 +254,7 @@ BOOL CGPM_MonitorDlg::OnInitDialog()
 	int autoConnect = AfxGetApp()->GetProfileInt("", "autoConnect", 0);
 	if (autoConnect) {
 		pAutoConnect->SetCheck(BST_CHECKED);
-		OnBnClickedConnect();
+		//OnBnClickedConnect();
 	}
 	
 	pServer = (CButton*)GetDlgItem(IDC_SERVER);
@@ -808,18 +805,18 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 
 void CGPM_MonitorDlg::OnBnClickedAutoconnect()
 {
-	AfxGetApp()->WriteProfileInt(NULL, "autoConnect", pAutoConnect->GetCheck());
+	AfxGetApp()->WriteProfileInt("", "autoConnect", pAutoConnect->GetCheck());
 }
 
 
 void CGPM_MonitorDlg::OnBnClickedServer()
 {
-	AfxGetApp()->WriteProfileInt(NULL, "tcpServer", pServer->GetCheck());
+	AfxGetApp()->WriteProfileInt("", "tcpServer", pServer->GetCheck());
 }
 
 void CGPM_MonitorDlg::OnBnClickedSimulink()
 {
-	AfxGetApp()->WriteProfileInt(NULL, "simulink", pSimulink->GetCheck());
+	AfxGetApp()->WriteProfileInt("", "simulink", pSimulink->GetCheck());
 }
 
 

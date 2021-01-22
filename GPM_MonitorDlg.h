@@ -64,6 +64,10 @@ public:
 	int iFW, nFW, wFW;
 	FILE *fw;
 
+	int sim_dt;  // in ms
+	int sim_cnt; // message count
+	int sim_n; // number of bytes in message
+
 	void Send(char *msg, int len);
 	void Recv(char *msg, int *len);
 	
