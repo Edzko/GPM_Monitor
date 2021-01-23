@@ -4,6 +4,7 @@
 #pragma once
 #include <sys/timeb.h>
 #include <time.h>
+
 #define MAXPNTS 1000
 
 typedef unsigned long uint64_t;
@@ -12,20 +13,26 @@ typedef short int16_t;
 
 typedef union
 {
-	unsigned char data[50];
+	unsigned char data[82];
 	struct {
 		uint64_t time;
-		double latitude;
-		double longitude;
-		float heading;
+		long double latitude;
+		long double longitude;
+		float heading;  // 24
 		float std;
 		float Vpp;
-		uint16_t posType;
+		uint16_t posType;  //36
 		int16_t steer;
 		int16_t brake;
 		int16_t rpm;
 		int16_t speed;
 		int16_t gear;
+		float vehEm_loc; // 58
+		float vehNm_loc;
+		float vehHrad_loc;
+		float error_Em;
+		float error_Nm;
+		float error_Hdeg;
 	} rec;
 } GPM_T;
 #define MAX_FWSIZE (2048)
@@ -52,6 +59,7 @@ public:
 
 	CButton *pAutoConnect, *pServer, *pSimulink;
 	CComboBox *pCOMList, *pSvrCOMList, *pSimulinkCOMList;
+	CSliderCtrl* pRate;
 
 	sockaddr_in si_other;
 	SOCKET gpmSock;

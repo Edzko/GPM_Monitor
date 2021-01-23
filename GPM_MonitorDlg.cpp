@@ -237,6 +237,9 @@ BOOL CGPM_MonitorDlg::OnInitDialog()
 	portname = AfxGetApp()->GetProfileString("", "simulink_com", "");
 	pSimulinkCOMList->SelectString(0, portname);
 
+	pRate = (CSliderCtrl*)GetDlgItem(IDC_RATE);
+	pRate->SetRange(1, 10);
+	pRate->SetPos(1);
 
 	Connected = 0;
 	hCommPort = 0;
@@ -594,6 +597,8 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 
 	if (nIDEvent==1)
 	{
+		SetTimer(1, 1000 / pRate->GetPos(), NULL);
+
 		memset(inbuf.data, 0, sizeof(GPM_T));
 		Send("G", 1);
 		Recv((char*)inbuf.data, &nc);		
@@ -881,3 +886,5 @@ void CGPM_MonitorDlg::OnSelchangeSimulinkcomlist()
 	pSimulinkCOMList->GetLBText(pSimulinkCOMList->GetCurSel(), portname);
 	AfxGetApp()->WriteProfileString("", "simulink_com", portname);
 }
+
+
