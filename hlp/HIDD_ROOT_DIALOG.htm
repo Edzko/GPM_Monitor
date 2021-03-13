@@ -6,28 +6,76 @@
 
 <META HTTP-EQUIV="Content-Type" Content="text/html; charset=Windows-1252">
 
-<TITLE>(&lt;&lt;YourApp&gt;&gt; Help Index)</TITLE>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+    <title>GPM Monitor - Introduction</title>
+    <style type="text/css">
+        h1 {
+            margin-top: 24.0pt;
+            margin-right: 0in;
+            margin-bottom: 0in;
+            margin-left: 0in;
+            margin-bottom: .0001pt;
+            line-height: 115%;
+            page-break-after: avoid;
+            font-size: 14.0pt;
+            font-family: "Calibri","sans-serif";
+            color: #365F91;
+        }
+        h2 {
+            margin-top: 24.0pt;
+            margin-right: 0in;
+            margin-bottom: 0in;
+            margin-left: 0in;
+            margin-bottom: .0001pt;
+            line-height: 115%;
+            page-break-after: avoid;
+            font-size: 12.0pt;
+            font-family: "Calibri","sans-serif";
+            color: #365F91;
+        }
+        normal {
+            font-family: "Calibri","sans-serif";
+        }
+
+        li {
+            font-family: "Calibri","sans-serif";
+        }
+
+        p {
+            margin-top: 0in;
+            margin-right: 0in;
+            margin-bottom: 10.0pt;
+            margin-left: 0in;
+            line-height: 115%;
+            font-size: 11.0pt;
+            font-family: "Calibri","sans-serif";
+        }
+    </style>
 
 </HEAD>
 
 
 
-<BODY>
-
-
-
-<P><A NAME="HIDD_GPM_MONITOR_DIALOG"></A><B>&lt;&lt;YourApp&gt;&gt; Help Topics</B></P>
-
-
-
-<P>Write a topic here that discusses your application's main dialog</P>
-
-
-
-<!-- Insert HTML here -->
-
-
-
+<BODY style="background-color:lightyellow">
+<h1>GPM Monitor - Introduction</h1>
+<p>    The GPS Positioning Module Monitor provides a graphical user interface for Magna's RTK GPS position tracking system.
+    </p>
+    <img src="images/gpmgui.png" />
+    <h2>Communication</h2>
+    <p>Connect to GPM module via one of the listed communication ports. If the module supports a WiFi console, then it's IP address will be listed in the drop-down list.</p>
+    <h2>Ethernet Server</h2>
+    <p>The Ethernet server feature can create a bridge between a USB Virtual COM port from the GPM module and a network Ethernet port, as if it is an additional WiFi console. This will allow GPM monitor to run across the network, and communicate with the GPM module, without requiring access to the WiFi interface of the module.</p>
+    <h2>Simulink</h2>
+    <p>The Simulink feature provides an interface for the embedded Simulink model in the GPM module, to use the Ethernet interface for communicating with external applications, using the module's USB Virtual COM port.</p>
+    <p>The IP address to the external application must be provided.</p>
+    <h2>Status Control</h2>
+    <p>Displays GPM module system time, and the power supply voltage. The slide can be used to adjust the update rate.</p>
+    <h2>Static</h2>
+    <p>Various fields can be monitored. </p>
+    <p>Some controls are provided to interface with the emedded Simulink model.</p>
+    <p>The checkbox &quot;NTRIP&quot; can be used to activate or deactivate the link with the RTK correction data server (CORS).</p>
+<hr />
+    <p>For more information contact Edzko Smid (<a href=mailto:Edzko.Smid@magna.com>Edzko.Smid@magna.com</a>)</p>
 </BODY>
 
 </HTML>

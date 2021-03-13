@@ -26,6 +26,7 @@
 #define IDC_VERSION                     1010
 #define IDC_VPP                         1011
 #define IDC_CHART                       1012
+#define IDC_VERSION2                    1012
 #define IDC_BUILD                       1013
 #define IDC_BUILD2                      1014
 #define IDC_MYDATE                      1014
@@ -51,16 +52,24 @@
 #define IDC_SIMULINK                    1032
 #define IDC_SIMULINKPORT                1033
 #define IDC_SIMULINKIP                  1034
-#define IDC_SLIDER1                     1035
 #define IDC_RATE                        1035
+#define IDC_ENUE                        1036
+#define IDC_ENUN                        1037
+#define IDC_ENUH                        1038
+#define IDC_ENUDE                       1039
+#define IDC_ENUDN                       1040
+#define IDC_ENUDH                       1041
+#define IDC_VEHSEL                      1042
+#define IDC_DRFLAG                      1043
+#define IDC_NTRIP                       1044
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        130
+#define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1036
+#define _APS_NEXT_CONTROL_VALUE         1045
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -82,7 +82,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>Setupapi.lib;Wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Setupapi.lib;Wininet.lib;htmlhelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -114,7 +114,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>Setupapi.lib;Wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Setupapi.lib;Wininet.lib;htmlhelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -182,7 +182,33 @@ makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(Filename)%(Extension)" &gt;&gt; "hlp\
   <ItemGroup>
     <None Include="hlp\GPM_Monitor.hhc" />
     <None Include="hlp\GPM_Monitor.hhk" />
-    <None Include="hlp\GPM_Monitor.hhp" />
+    <CustomBuild Include="hlp\GPM_Monitor.hhp">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">start /wait hhc "hlp\GPM_Monitor.hhp"
+if not exist "hlp\GPM_Monitor.chm" goto :HelpError
+copy "hlp\GPM_Monitor.chm" "GPM_Monitor.chm"
+goto :HelpDone
+:HelpError
+echo hlp\GPM_Monitor.hhp : error:Problem encountered creating help file
+echo.
+:HelpDone
+echo.
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building Help file ...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">GPM_Monitor.chm</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">start /wait hhc "hlp\GPM_Monitor.hhp"
+if not exist "hlp\GPM_Monitor.chm" goto :HelpError
+copy "hlp\GPM_Monitor.chm" "GPM_Monitor.chm"
+goto :HelpDone
+:HelpError
+echo hlp\GPM_Monitor.hhp : error:Problem encountered creating help file
+echo.
+:HelpDone
+echo.
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building Help file ...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">GPM_Monitor.chm</Outputs>
+    </CustomBuild>
     <None Include="hlp\HIDD_ROOT_DIALOG.htm">
       <DeploymentContent>true</DeploymentContent>
     </None>

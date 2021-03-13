@@ -9,11 +9,14 @@
 
 typedef unsigned long uint64_t;
 typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
+typedef unsigned char uint8_t;
+typedef char int8_t;
 typedef short int16_t;
 
 typedef union
 {
-	unsigned char data[82];
+	unsigned char data[200];
 	struct {
 		uint64_t time;
 		long double latitude;
@@ -35,10 +38,53 @@ typedef union
 		float error_Hdeg;
 	} rec;
 } GPM_T;
+
+typedef struct
+{
+	uint8_t version;
+	uint8_t logWiFi : 1;
+	uint8_t vlsf : 1;
+	uint8_t dreck : 1;  // dead-reckoning model
+	uint8_t parseNMEA : 1;
+	uint8_t parseUBLOX : 1;
+	uint8_t drFlag : 1;
+	uint8_t drMakeNovatel : 1;
+	uint8_t res1 : 1;
+	uint16_t dRate; // debug monitor interval
+	uint32_t ubloxbaudrate;
+	uint32_t wifibaudrate;
+	float GyroCal;  // 16
+	float Kf_Accel;
+	float Kff_Accel;
+	float Kf_Gyro;
+	float KG_wo;
+	uint16_t gpsRate; // 36
+	uint16_t res2;
+	double longitude;
+	double lattitude;
+	float heading;  // 56
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t minute;
+	int8_t ntrip_un[30]; // 66
+	int8_t ntrip_pw[30];
+	int8_t ntrip_host[30];
+	uint16_t ntrip_port; // 156
+	uint16_t dm;   ///< Initial Debug Monitor 
+	uint16_t nQ;  ///< Number of epochs data IMU/ADC to capture
+	uint8_t ethChan;  ///< COM port used to bridge Ethernet data for Simulink. Follow ::LOGIN_T
+	uint8_t drVehcile;
+	int16_t Gyro0[3];  ///< Gyro Offsets
+	int16_t Acc0[3];  ///< Acceleromater offsets
+} CONFIG_DATA;
+
+
 #define MAX_FWSIZE (2048)
 #define BLK_FWSIZE (256)
 
-extern char fwdata[MAX_FWSIZE]; // 1Mb firmware hex file max
+extern unsigned char fwdata[MAX_FWSIZE]; // 1Mb firmware hex file max
 
 // CGPM_MonitorDlg dialog
 class CGPM_MonitorDlg : public CDialog
@@ -56,6 +102,7 @@ public:
 	unsigned int stat;
 	FILE *logFile;
 	char logFilename[100];
+	CONFIG_DATA cfgdata;
 
 	CButton *pAutoConnect, *pServer, *pSimulink;
 	CComboBox *pCOMList, *pSvrCOMList, *pSimulinkCOMList;
@@ -68,7 +115,7 @@ public:
 	bool svrrunning;
 	bool simrunning;
 	int svrcom;
-	unsigned int crc;
+	unsigned short crc;
 	int iFW, nFW, wFW;
 	FILE *fw;
 
@@ -78,6 +125,7 @@ public:
 
 	void Send(char *msg, int len);
 	void Recv(char *msg, int *len);
+	void parseSP(char* msg, int len);
 	
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
@@ -104,4 +152,8 @@ public:
 	afx_msg void OnBnClickedSimulinkconnect();
 	afx_msg void OnBnClickedSimulink();
 	afx_msg void OnSelchangeSimulinkcomlist();
+	afx_msg void OnCbnSelchangeVehSel();
+	afx_msg void OnBnClickeddrFlag();
+	afx_msg void OnBnClickedNtrip();
+	afx_msg void OnBnClickedHelp();
 };

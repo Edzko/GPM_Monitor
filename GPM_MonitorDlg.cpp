@@ -15,7 +15,7 @@
 #endif
 
 
-char fwdata[MAX_FWSIZE];
+unsigned char fwdata[MAX_FWSIZE];
 char usbdata[MAX_FWSIZE];
 
 extern UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam);
@@ -98,6 +98,10 @@ BEGIN_MESSAGE_MAP(CGPM_MonitorDlg, CDialog)
 	ON_BN_CLICKED(IDC_SIMULINKCONNECT, &CGPM_MonitorDlg::OnBnClickedSimulinkconnect)
 	ON_BN_CLICKED(IDC_SIMULINK, &CGPM_MonitorDlg::OnBnClickedSimulink)
 	ON_CBN_SELCHANGE(IDC_SIMULINKCOMLIST, &CGPM_MonitorDlg::OnSelchangeSimulinkcomlist)
+	ON_CBN_SELCHANGE(IDC_VEHSEL, &CGPM_MonitorDlg::OnCbnSelchangeVehSel)
+	ON_BN_CLICKED(IDC_DRFLAG, &CGPM_MonitorDlg::OnBnClickeddrFlag)
+	ON_BN_CLICKED(IDC_NTRIP, &CGPM_MonitorDlg::OnBnClickedNtrip)
+	ON_BN_CLICKED(ID_HELP, &CGPM_MonitorDlg::OnBnClickedHelp)
 END_MESSAGE_MAP()
 
 
@@ -218,6 +222,10 @@ BOOL CGPM_MonitorDlg::OnInitDialog()
 	{
 		pCOMList->SetCurSel(0);
 	}
+
+	//CComboBox* pVeh = (CComboBox*)GetDlgItem(IDC_VEHSEL);
+	//int selVeh = AfxGetApp()->GetProfileInt("", "vehSelect", 0);
+	//pVeh->SetCurSel(selVeh);
 
 	pSvrCOMList = (CComboBox*)GetDlgItem(IDC_SVRCOMLIST);
 	GetCOMPorts(pSvrCOMList);
@@ -383,6 +391,18 @@ void CGPM_MonitorDlg::Recv(char *msg, int *len)
 	else *len = 0;
 }
 
+void CGPM_MonitorDlg::parseSP(char* msg, int len)
+{
+	char valstr[10];
+	unsigned char *c = (unsigned char*)&cfgdata, ic = 0;
+	memset(valstr, 0, 10);
+	// make sure string starts with "SP#"
+	for (int i = 3; i < len; i += 2) {
+		strncpy_s(valstr,10, &msg[i], 2);
+		sscanf_s(valstr, "%hhX", &c[ic++]);
+	}
+}
+
 void CGPM_MonitorDlg::OnBnClickedConnect()
 {
 	char CommPort[100], msg[100];
@@ -455,11 +475,23 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 				while (msg[end] > 13) end++;
 				msg[end] = 0;
 				SetDlgItemText(IDC_VERSION, &msg[start]);
+
+				Send("sp#\r", 4);
+				Sleep(100);
+				Recv(msg, &nc);
+				if (nc > 0)
+					parseSP(msg, nc);
+				SetTimer(1,1000,NULL);  // Joystick timer, half rate for AC4790
+				SetDlgItemText(IDC_CONNECT,"Disconnect");
+				pCom->EnableWindow(false);
+				pFW->EnableWindow(true);
 			}
-			SetTimer(1,1000,NULL);  // Joystick timer, half rate for AC4790
-			SetDlgItemText(IDC_CONNECT,"Disconnect");
-			pCom->EnableWindow(false);
-			pFW->EnableWindow(true);
+			else {
+				shutdown(gpmSock, SD_SEND);
+				Sleep(100);
+				closesocket(gpmSock);
+				Connected = 0;
+			}
 		}
 	}
 	else
@@ -544,6 +576,14 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 				while (msg[end] > 13) end++;
 				msg[end] = 0;
 				SetDlgItemText(IDC_VERSION, &msg[start]);
+
+				// Get current configuration
+				Send("sp#\r", 4);
+				Sleep(100);
+				Recv(msg, &nc);
+				if (nc > 0)
+					parseSP(msg, nc);
+
 				SetTimer(1, 1000, NULL);  // Joystick timer, half rate for AC4790
 				ambootloader = false;
 				pFW->EnableWindow(true);
@@ -597,7 +637,10 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 
 	if (nIDEvent==1)
 	{
-		SetTimer(1, 1000 / pRate->GetPos(), NULL);
+		if (Connected == 0)
+			KillTimer(1);
+		else 
+			SetTimer(1, 1000 / pRate->GetPos(), NULL);
 
 		memset(inbuf.data, 0, sizeof(GPM_T));
 		Send("G", 1);
@@ -609,6 +652,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			int s = (int)(inbuf.rec.time - h * 3600000 - m * 60000) / 1000;
 			int ms = (int)(inbuf.rec.time - h * 3600000 - m * 60000 - s * 1000);
 			sprintf_s(txt, 100, "Time: %02i:%02i:%02i.%03i", h, m, s, ms);
+
 			SetDlgItemText(IDC_GPMTIME, txt);
 			sprintf_s(txt, 500, "%1.10lf", inbuf.rec.latitude);
 			SetDlgItemText(IDC_LATITUDE, txt);
@@ -618,8 +662,15 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			SetDlgItemText(IDC_HEADING, txt);
 			sprintf_s(txt, 500, "%1.3f", inbuf.rec.std);
 			SetDlgItemText(IDC_STD, txt);
-			sprintf_s(txt, 500, "%i", inbuf.rec.posType);
-			SetDlgItemText(IDC_POSTYPE, txt);
+			//sprintf_s(txt, 500, "%i", inbuf.rec.posType);
+			switch (inbuf.rec.posType) {
+			case 1: SetDlgItemText(IDC_POSTYPE, "GPS (1)"); break;
+			case 2: SetDlgItemText(IDC_POSTYPE, "GPS (2)"); break;
+			case 3: SetDlgItemText(IDC_POSTYPE, "GPS (3)"); break;
+			case 4: SetDlgItemText(IDC_POSTYPE, "RTK FIXED"); break;
+			case 5: SetDlgItemText(IDC_POSTYPE, "RTK FLOAT"); break;
+			default: break;
+			}
 			sprintf_s(txt, 500, "%i", inbuf.rec.steer);
 			SetDlgItemText(IDC_STEER, txt);
 			sprintf_s(txt, 500, "%i", inbuf.rec.speed);
@@ -633,6 +684,19 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			sprintf_s(txt, 500, "%1.2f", inbuf.rec.Vpp);
 			SetDlgItemText(IDC_VPP, txt);
 
+			sprintf_s(txt, 500, "%1.2f", inbuf.rec.vehEm_loc);
+			SetDlgItemText(IDC_ENUE, txt);
+			sprintf_s(txt, 500, "%1.2f", inbuf.rec.vehNm_loc);
+			SetDlgItemText(IDC_ENUN, txt);
+			sprintf_s(txt, 500, "%1.1f", inbuf.rec.vehHrad_loc);
+			SetDlgItemText(IDC_ENUH, txt);
+			sprintf_s(txt, 500, "%1.3f", inbuf.rec.error_Em);
+			SetDlgItemText(IDC_ENUDE, txt);
+			sprintf_s(txt, 500, "%1.3f", inbuf.rec.error_Nm);
+			SetDlgItemText(IDC_ENUDN, txt);
+			sprintf_s(txt, 500, "%1.3f", inbuf.rec.error_Hdeg);
+			SetDlgItemText(IDC_ENUDH, txt);
+
 			if (logFile)
 			{
 				char timebuf[128];
@@ -642,8 +706,8 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 					inbuf.rec.std, inbuf.rec.posType, inbuf.rec.steer, inbuf.rec.speed, inbuf.rec.brake, inbuf.rec.rpm);
 			}
 		}	
-		Invalidate(0);
-		UpdateWindow();		
+		//Invalidate(0);
+		//UpdateWindow();		
 	}
 
 	if (nIDEvent==2)
@@ -656,7 +720,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 		}
 	}
 
-	if (nIDEvent == 4)
+	if (nIDEvent == 4)  // firmware update
 	{
 		char rtn[100];
 		int nc = 100;
@@ -675,22 +739,36 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 					// reboot to reflash
 					//Send("RS0\r", 4);
 					MessageBox("Reset firmware to re-program device.", "GPM Update", MB_ICONINFORMATION | MB_OK);
+					fseek(fw, 0, SEEK_SET);
+					for (int i = 0; i < nFW; i++) {
+						fread_s((char*)fwdata, MAX_FWSIZE, 1, 1, fw);
+						crc += fwdata[0];
+					}
 					fclose(fw);
-					fw = NULL;
+					fw = NULL; 
 					sprintf_s(rtn, 100, "CRC=%i", crc);
 					SetDlgItemText(IDC_CRC, rtn);
 				} else {
 					iFW += BLK_FWSIZE;
-					fread_s(fwdata, MAX_FWSIZE, 1, BLK_FWSIZE, fw);
-					for (int i = 0; i < BLK_FWSIZE; i++) crc += fwdata[i];
-					//memset(fwdata, 'A', BLK_FWSIZE);
-					//for (int i=0;i< BLK_FWSIZE;i++)
-					//	sprintf_s(&usbdata[2 * i], 10, "%02X", fwdata[i]);
-					//Send(usbdata, BLK_FWSIZE*2);
-					Send(fwdata, BLK_FWSIZE);
+					fread_s(fwdata+0x10, MAX_FWSIZE, 1, BLK_FWSIZE, fw);
+					//for (int i = 0; i < BLK_FWSIZE; i++) crc += fwdata[i];
+					fwdata[0] = 0x55;
+					fwdata[1] = 0xAA;
+					fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
+					fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
+					Send((char*)fwdata, BLK_FWSIZE);
 				}
 			}; 
 			if (rtn[nc-1] == 'R') { // repeat last packet
+				iFW -= BLK_FWSIZE;
+				fseek(fw, -2*BLK_FWSIZE, SEEK_CUR);
+				fread_s(fwdata+0x10, MAX_FWSIZE, 1, BLK_FWSIZE, fw);
+				//for (int i = 0; i < BLK_FWSIZE; i++) crc += fwdata[i];
+				fwdata[0] = 0x55;
+				fwdata[1] = 0xAA;
+				fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
+				fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
+				Send((char*)fwdata, BLK_FWSIZE);
 			}; 
 			if (rtn[nc-1] == 'Q') { // exit
 				KillTimer(4);
@@ -703,10 +781,17 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			if (wFW > 20)
 			{
 				Send(usbdata, BLK_FWSIZE*2); // timeout; send again
-				Send(fwdata, BLK_FWSIZE); // timeout; send again
+				Send((char*)fwdata, BLK_FWSIZE); // timeout; send again
 				wFW = 0;
 			}
 		}
+	}
+
+	if (nIDEvent == 5)
+	{
+		CButton* pFlag = (CButton*)GetDlgItem(IDC_NTRIP);
+		pFlag->EnableWindow(true);
+		KillTimer(5);
 	}
 
 	CDialog::OnTimer(nIDEvent);
@@ -888,3 +973,42 @@ void CGPM_MonitorDlg::OnSelchangeSimulinkcomlist()
 }
 
 
+
+
+void CGPM_MonitorDlg::OnCbnSelchangeVehSel()
+{
+	char cmd[20];
+	CComboBox* pVeh = (CComboBox*)GetDlgItem(IDC_VEHSEL);
+	int iVeh = pVeh->GetCurSel();
+	sprintf_s(cmd, 20, "sp32,%i\r", iVeh + 1);
+	Send(cmd,strlen(cmd));
+	//AfxGetApp()->WriteProfileInt("", "vehSelect", iVeh);
+}
+
+
+void CGPM_MonitorDlg::OnBnClickeddrFlag()
+{
+	CButton* pFlag = (CButton*)GetDlgItem(IDC_DRFLAG);
+	if (pFlag->GetCheck())
+		Send("sp30,0\r", 7);
+	else
+		Send("sp30,1\r", 7);
+}
+
+
+void CGPM_MonitorDlg::OnBnClickedNtrip()
+{
+	CButton* pFlag = (CButton*)GetDlgItem(IDC_NTRIP);
+	if (pFlag->GetCheck())
+		Send("wf4\r", 5);
+	else
+		Send("wf5\r", 4);
+	pFlag->EnableWindow(false);
+	SetTimer(5, 5000, NULL);
+}
+
+
+void CGPM_MonitorDlg::OnBnClickedHelp()
+{
+	::HtmlHelp(m_hWnd, "GPM_Monitor.chm", HH_DISPLAY_TOC, 0);
+}
