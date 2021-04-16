@@ -7,12 +7,12 @@
 
 #define MAXPNTS 1000
 
-typedef unsigned long uint64_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
-typedef unsigned char uint8_t;
-typedef char int8_t;
-typedef short int16_t;
+//typedef unsigned long uint64_t;
+//typedef unsigned short uint16_t;
+//typedef unsigned int uint32_t;
+//typedef unsigned char uint8_t;
+//typedef char int8_t;
+//typedef short int16_t;
 
 typedef union
 {
@@ -36,6 +36,9 @@ typedef union
 		float error_Em;
 		float error_Nm;
 		float error_Hdeg;
+		int16_t nSats;
+		uint16_t wheelspeed[4];
+		uint16_t WF_State;
 	} rec;
 } GPM_T;
 
@@ -126,6 +129,7 @@ public:
 	void Send(char *msg, int len);
 	void Recv(char *msg, int *len);
 	void parseSP(char* msg, int len);
+	bool noUpdate;
 	
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
@@ -156,4 +160,5 @@ public:
 	afx_msg void OnBnClickeddrFlag();
 	afx_msg void OnBnClickedNtrip();
 	afx_msg void OnBnClickedHelp();
+	afx_msg void OnBnClickedSetutctime();
 };

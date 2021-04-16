@@ -9,6 +9,8 @@
 #define IDC_RESET2                      6
 #define IDC_SVRCONNECT                  6
 #define IDC_SIMULINKCONNECT             7
+#define IDC_SIMULINKCONNECT2            8
+#define IDC_SETUTCTIME                  8
 #define IDM_ABOUTBOX                    0x0010
 #define IDD_ABOUTBOX                    100
 #define IDS_ABOUTBOX                    101

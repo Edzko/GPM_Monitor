@@ -102,6 +102,7 @@ BEGIN_MESSAGE_MAP(CGPM_MonitorDlg, CDialog)
 	ON_BN_CLICKED(IDC_DRFLAG, &CGPM_MonitorDlg::OnBnClickeddrFlag)
 	ON_BN_CLICKED(IDC_NTRIP, &CGPM_MonitorDlg::OnBnClickedNtrip)
 	ON_BN_CLICKED(ID_HELP, &CGPM_MonitorDlg::OnBnClickedHelp)
+	ON_BN_CLICKED(IDC_SETUTCTIME, &CGPM_MonitorDlg::OnBnClickedSetutctime)
 END_MESSAGE_MAP()
 
 
@@ -401,6 +402,13 @@ void CGPM_MonitorDlg::parseSP(char* msg, int len)
 		strncpy_s(valstr,10, &msg[i], 2);
 		sscanf_s(valstr, "%hhX", &c[ic++]);
 	}
+
+	noUpdate = true;
+	CComboBox* pVeh = (CComboBox*)GetDlgItem(IDC_VEHSEL); 
+	if (cfgdata.drVehcile>0) 
+		pVeh->SetCurSel(cfgdata.drVehcile-1);
+	CButton* pFlag = (CButton*)GetDlgItem(IDC_DRFLAG);
+	pFlag->SetCheck(cfgdata.drFlag);
 }
 
 void CGPM_MonitorDlg::OnBnClickedConnect()
@@ -478,6 +486,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 
 				Send("sp#\r", 4);
 				Sleep(100);
+				nc = 500;
 				Recv(msg, &nc);
 				if (nc > 0)
 					parseSP(msg, nc);
@@ -579,7 +588,8 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 
 				// Get current configuration
 				Send("sp#\r", 4);
-				Sleep(100);
+				Sleep(500);
+				nc = 500;
 				Recv(msg, &nc);
 				if (nc > 0)
 					parseSP(msg, nc);
@@ -618,7 +628,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 				// print Header
 				char datebuf[128];
 				_strdate_s( datebuf, 128 );
-				fprintf(logFile,"GPM Monitor %i on %s.\r\nTime, System time, Latitude, Longitude, Heading, Std, PosType, Steer, Speed, Brake, RPM\r\n",ilog,datebuf);
+				fprintf(logFile,"GPM Monitor %i on %s.\r\nTime, System time, Latitude, Longitude, Heading, Std, PosType, Steer, Speed, Brake, RPM, WS FL, WS FR, WS RL, WS RR\r\n",ilog,datebuf);
 				SetTimer(2,60000,NULL);  // close and re-open once per minute, so that no data is lost when GPM monitor closes.
 			} else {
 				TRACE1("Error opening logfile (%i)\r\n",nResult);
@@ -671,6 +681,9 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			case 5: SetDlgItemText(IDC_POSTYPE, "RTK FLOAT"); break;
 			default: break;
 			}
+			sprintf_s(txt, 500, "%i", inbuf.rec.nSats);
+			SetDlgItemText(IDC_NSATS, txt);
+
 			sprintf_s(txt, 500, "%i", inbuf.rec.steer);
 			SetDlgItemText(IDC_STEER, txt);
 			sprintf_s(txt, 500, "%i", inbuf.rec.speed);
@@ -697,13 +710,17 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			sprintf_s(txt, 500, "%1.3f", inbuf.rec.error_Hdeg);
 			SetDlgItemText(IDC_ENUDH, txt);
 
+			//CButton* pFlag = (CButton*)GetDlgItem(IDC_NTRIP);
+			//if (inbuf.rec.WF_State == 25) pFlag->SetCheck(BST_CHECKED); else pFlag->SetCheck(BST_UNCHECKED);
+
 			if (logFile)
 			{
 				char timebuf[128];
 				_strtime_s(timebuf, 128);
-				fprintf(logFile, "%s,%f,%1.10lf,%1.10lf,%1.2f,%1.3f,%i,%i,%i,%i,%i\r\n", timebuf,
+				fprintf(logFile, "%s,%f,%1.10lf,%1.10lf,%1.2f,%1.3f,%i,%i,%i,%i,%i,%i,%i,%i,%i\r\n", timebuf,
 					0.001*inbuf.rec.time, inbuf.rec.latitude, inbuf.rec.longitude, inbuf.rec.heading,
-					inbuf.rec.std, inbuf.rec.posType, inbuf.rec.steer, inbuf.rec.speed, inbuf.rec.brake, inbuf.rec.rpm);
+					inbuf.rec.std, inbuf.rec.posType, inbuf.rec.steer, inbuf.rec.speed, inbuf.rec.brake, inbuf.rec.rpm,
+					inbuf.rec.wheelspeed[0], inbuf.rec.wheelspeed[1], inbuf.rec.wheelspeed[2], inbuf.rec.wheelspeed[3]);
 			}
 		}	
 		//Invalidate(0);
@@ -1011,4 +1028,10 @@ void CGPM_MonitorDlg::OnBnClickedNtrip()
 void CGPM_MonitorDlg::OnBnClickedHelp()
 {
 	::HtmlHelp(m_hWnd, "GPM_Monitor.chm", HH_DISPLAY_TOC, 0);
+}
+
+
+void CGPM_MonitorDlg::OnBnClickedSetutctime()
+{
+	// Get Time and Date and set UBLOX receiver UTC time
 }
