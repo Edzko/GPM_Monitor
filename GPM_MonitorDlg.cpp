@@ -17,6 +17,7 @@
 
 unsigned char fwdata[MAX_FWSIZE];
 char usbdata[MAX_FWSIZE];
+unsigned char fwfile[500000];
 
 extern UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam);
 extern UINT __cdecl ProcServerThreadFunction(LPVOID pParam);
@@ -371,12 +372,14 @@ void CGPM_MonitorDlg::Recv(char *msg, int *len)
 	{
 		
 		int nResult = recv(gpmSock,msg,*len,0);
-		if (nResult==SOCKET_ERROR)
+		if (nResult == SOCKET_ERROR)
 		{
 			int nErr = GetLastError();
-			char errMsg[500];
-			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,0,nErr,0,errMsg,500,NULL);
-			TRACE1("Error: %s\r\n",errMsg);
+			if (nErr != WSAETIMEDOUT) {
+				char errMsg[500];
+				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
+				TRACE1("Error: %s\r\n", errMsg);
+			}
 		}
 		*len = nResult;
 	} 
@@ -490,7 +493,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 				Recv(msg, &nc);
 				if (nc > 0)
 					parseSP(msg, nc);
-				SetTimer(1,1000,NULL);  // Joystick timer, half rate for AC4790
+				SetTimer(1,500,NULL);  
 				SetDlgItemText(IDC_CONNECT,"Disconnect");
 				pCom->EnableWindow(false);
 				pFW->EnableWindow(true);
@@ -594,7 +597,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 				if (nc > 0)
 					parseSP(msg, nc);
 
-				SetTimer(1, 1000, NULL);  // Joystick timer, half rate for AC4790
+				SetTimer(1, 500, NULL);  
 				ambootloader = false;
 				pFW->EnableWindow(true);
 			}
@@ -653,7 +656,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			SetTimer(1, 1000 / pRate->GetPos(), NULL);
 
 		memset(inbuf.data, 0, sizeof(GPM_T));
-		Send("G", 1);
+		Send("*GG", 3);
 		Recv((char*)inbuf.data, &nc);		
 		if (nc > 0)
 		{			
@@ -748,46 +751,50 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			wFW = 0;
 			sprintf_s(txt, 100, "Upgrading: pkt=%i/%i",iFW/ BLK_FWSIZE,nFW/ BLK_FWSIZE);
 			SetDlgItemText(IDC_GPMTIME, txt);
-			if ((rtn[nc-1] == 'K')||(iFW==0)) { // okay. send next
-				if (iFW > nFW) {
+			if ((rtn[0] == 'K') || (iFW==0)) { // okay. send next
+				if (iFW > nFW) {  // finished
 					KillTimer(4);
+					fwdata[0] = 0x55;
+					fwdata[1] = 0xAA;
+					fwdata[2] = 0xFF;
+					fwdata[3] = 0xFF;
+					fwdata[4] = crc >> 8;
+					fwdata[5] = crc & 0xFF;
+					Send((char*)fwdata, BLK_FWSIZE + 0x10);
+					Sleep(100);
 					SetTimer(1, 1000, NULL);
 					SetTimer(2, 1000, NULL);
 					// reboot to reflash
 					//Send("RS0\r", 4);
-					MessageBox("Reset firmware to re-program device.", "GPM Update", MB_ICONINFORMATION | MB_OK);
-					fseek(fw, 0, SEEK_SET);
-					for (int i = 0; i < nFW; i++) {
-						fread_s((char*)fwdata, MAX_FWSIZE, 1, 1, fw);
-						crc += fwdata[0];
-					}
-					fclose(fw);
-					fw = NULL; 
-					sprintf_s(rtn, 100, "CRC=%i", crc);
-					SetDlgItemText(IDC_CRC, rtn);
+					//MessageBox("Reset firmware to re-program device.", "GPM Update", MB_ICONINFORMATION | MB_OK);
+					//sprintf_s(rtn, 100, "CRC=%i", crc);
+					//SetDlgItemText(IDC_CRC, rtn);
+					SetDlgItemText(IDC_UPDATE, "Update");
 				} else {
-					iFW += BLK_FWSIZE;
-					fread_s(fwdata+0x10, MAX_FWSIZE, 1, BLK_FWSIZE, fw);
+					
+					memcpy(fwdata+0x10, &fwfile[iFW], BLK_FWSIZE);
 					//for (int i = 0; i < BLK_FWSIZE; i++) crc += fwdata[i];
 					fwdata[0] = 0x55;
 					fwdata[1] = 0xAA;
 					fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
 					fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
-					Send((char*)fwdata, BLK_FWSIZE);
+					Send((char*)fwdata, BLK_FWSIZE+0x10);
+					iFW += BLK_FWSIZE;
 				}
 			}; 
-			if (rtn[nc-1] == 'R') { // repeat last packet
-				iFW -= BLK_FWSIZE;
-				fseek(fw, -2*BLK_FWSIZE, SEEK_CUR);
-				fread_s(fwdata+0x10, MAX_FWSIZE, 1, BLK_FWSIZE, fw);
+			if (rtn[0] == 'R') { // repeat previous packet
+				iFW -= 2*BLK_FWSIZE;
+				if (iFW < 0) iFW = 0;
+				memcpy(fwdata + 0x10, &fwfile[iFW], BLK_FWSIZE);
 				//for (int i = 0; i < BLK_FWSIZE; i++) crc += fwdata[i];
 				fwdata[0] = 0x55;
 				fwdata[1] = 0xAA;
 				fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
 				fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
-				Send((char*)fwdata, BLK_FWSIZE);
+				Send((char*)fwdata, BLK_FWSIZE+0x10);
+				iFW += BLK_FWSIZE;
 			}; 
-			if (rtn[nc-1] == 'Q') { // exit
+			if (rtn[0] == 'Q') { // exit
 				KillTimer(4);
 				SetTimer(1, 1000, NULL);
 				SetTimer(2, 1000, NULL);
@@ -797,8 +804,8 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			wFW++;
 			if (wFW > 20)
 			{
-				Send(usbdata, BLK_FWSIZE*2); // timeout; send again
-				Send((char*)fwdata, BLK_FWSIZE); // timeout; send again
+				//Send(usbdata, BLK_FWSIZE*2); // timeout; send again
+				Send((char*)fwdata, BLK_FWSIZE+0x10); // timeout; send again
 				wFW = 0;
 			}
 		}
@@ -851,7 +858,9 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 {
 	char key = 27;
 	char szFile[500];
-	
+	char msg[100];
+	int nc;
+
 	if (!Connected) 
 		return;
 
@@ -877,34 +886,46 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 			return;
 		}
 		errno_t nErr = fopen_s(&fw, ofn.lpstrFile, "rb");
-		fseek(fw, 0L, SEEK_END);
-		nFW = ftell(fw);
-		rewind(fw);
+		nFW = fread(fwfile, 1, 500000, fw);
+		fclose(fw);
+		crc = 0;
+		for (int i = 0; i <= nFW / BLK_FWSIZE; i++) {
+			for (int j = 0; j < BLK_FWSIZE; j++)
+				crc += fwfile[i * BLK_FWSIZE + j];
+		}
+		fw = NULL;
 		iFW = 0;
 		wFW = 0;
-		crc = 0;
-		KillTimer(2);
 		KillTimer(1);
 		upgrading = true;
-		if (!ambootloader)
+		if (!ambootloader)  // make sure we're not connected to the bootloader
 		{
 			// Enter "upload firmware" mode of the App
-			Send("rs3\r", 4);
-			Sleep(100);
+			int n = 0;
+			for (n = 0; n < 3; n++) {
+				Send("rs3\r", 4);
+				Sleep(100);
+				nc = 100;
+				while (nc == 100)
+					Recv(msg, &nc);
+				if (msg[nc - 1] == 'K') {
+					SetTimer(4, 10, NULL);
+					SetDlgItemText(IDC_UPDATE, "Cancel");
+					break;
+				}
+			}
+			if (n==3) {
+				SetTimer(1, 1000 / pRate->GetPos(), NULL);
+			}
 		}
-		SetTimer(4, 10, NULL);
-		SetDlgItemText(IDC_UPDATE, "Cancel");
+		
 	}
 	else {
 		KillTimer(4);
-		SetTimer(1, 1000, NULL);
-		SetTimer(2, 1000, NULL);
+		SetTimer(1, 1000 / pRate->GetPos(), NULL);
 		upgrading = false;
 		Sleep(100);
-		Send(&key, 1);// exit upgrade mode.
 		SetDlgItemText(IDC_UPDATE, "Update");
-		if (fw) fclose(fw);
-		fw = NULL;
 	}
 }
 
