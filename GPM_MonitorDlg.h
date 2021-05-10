@@ -87,6 +87,7 @@ typedef struct
 // following must match the embedded firmware
 #define MAX_FWSIZE (1500)
 #define BLK_FWSIZE (0x200)
+#define ERASE_BLOCK_SIZE (16384UL)  // 0x4000
 
 extern unsigned char fwdata[MAX_FWSIZE]; // 1Mb firmware hex file max
 

@@ -459,7 +459,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 				TRACE1("Error: %s\r\n",errMsg);
 			}
 			Connected = 2;
-
+			upgrading = false;
 			int timeout = 100;
 			nResult = setsockopt(gpmSock,SOL_SOCKET,SO_RCVTIMEO,(const char*)&timeout,sizeof(timeout));
 			if (nResult==SOCKET_ERROR)
@@ -523,7 +523,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 			}
 			SetDlgItemText(IDC_CONNECT,"Connect");
 			SetDlgItemText(IDC_VERSION, "");
-			SetDlgItemText(IDC_UPDATE, "Update");
+			SetDlgItemText(IDC_UPDATE, "Firmware Update");
 			KillTimer(1);
 			KillTimer(2);
 			KillTimer(4);
@@ -571,6 +571,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 			fSuccess = SetCommTimeouts(hCommPort, &CommTimeouts);
 			
 			Connected = 1;
+			upgrading = false;
 	//		pCom->GetLBText(pCom->GetCurSel(),portName);
 			SetDlgItemText(IDC_CONNECT,"Disconnect");
 			pCom->EnableWindow(false);
@@ -752,7 +753,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			sprintf_s(txt, 100, "Upgrading: pkt=%i/%i",iFW/ BLK_FWSIZE,nFW/ BLK_FWSIZE);
 			SetDlgItemText(IDC_GPMTIME, txt);
 			if ((rtn[0] == 'K') || (iFW==0)) { // okay. send next
-				if (iFW > nFW) {  // finished
+				if (iFW >= nFW) {  // finished
 					KillTimer(4);
 					fwdata[0] = 0x55;
 					fwdata[1] = 0xAA;
@@ -764,16 +765,11 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 					Sleep(100);
 					SetTimer(1, 1000, NULL);
 					SetTimer(2, 1000, NULL);
-					// reboot to reflash
-					//Send("RS0\r", 4);
-					//MessageBox("Reset firmware to re-program device.", "GPM Update", MB_ICONINFORMATION | MB_OK);
-					//sprintf_s(rtn, 100, "CRC=%i", crc);
-					//SetDlgItemText(IDC_CRC, rtn);
-					SetDlgItemText(IDC_UPDATE, "Update");
-				} else {
-					
+					upgrading = false;
+					SetDlgItemText(IDC_UPDATE, "Firmware Update");
+					OnBnClickedConnect(); // Disconnect, because system reboots
+				} else {					
 					memcpy(fwdata+0x10, &fwfile[iFW], BLK_FWSIZE);
-					//for (int i = 0; i < BLK_FWSIZE; i++) crc += fwdata[i];
 					fwdata[0] = 0x55;
 					fwdata[1] = 0xAA;
 					fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
@@ -802,9 +798,8 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 		}
 		else {
 			wFW++;
-			if (wFW > 20)
+			if (wFW > 10)
 			{
-				//Send(usbdata, BLK_FWSIZE*2); // timeout; send again
 				Send((char*)fwdata, BLK_FWSIZE+0x10); // timeout; send again
 				wFW = 0;
 			}
@@ -885,14 +880,13 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 			DWORD nErr = CommDlgExtendedError();
 			return;
 		}
+		memset(fwfile, 255, sizeof(fwfile));
 		errno_t nErr = fopen_s(&fw, ofn.lpstrFile, "rb");
-		nFW = fread(fwfile, 1, 500000, fw);
+		nFW = fread(fwfile, 1, sizeof(fwfile), fw);
+		nFW = (nFW / ERASE_BLOCK_SIZE + 1) * ERASE_BLOCK_SIZE;
 		fclose(fw);
 		crc = 0;
-		for (int i = 0; i <= nFW / BLK_FWSIZE; i++) {
-			for (int j = 0; j < BLK_FWSIZE; j++)
-				crc += fwfile[i * BLK_FWSIZE + j];
-		}
+		for (int i = 0; i < nFW; i++) crc += fwfile[i];
 		fw = NULL;
 		iFW = 0;
 		wFW = 0;
@@ -925,7 +919,7 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 		SetTimer(1, 1000 / pRate->GetPos(), NULL);
 		upgrading = false;
 		Sleep(100);
-		SetDlgItemText(IDC_UPDATE, "Update");
+		SetDlgItemText(IDC_UPDATE, "Firmware Update");
 	}
 }
 
