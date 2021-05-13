@@ -481,9 +481,9 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 			if (nc>0)
 			{
 				int start = 0, end = 0;
-				while (msg[start] <= 13) start++;
+				while ((msg[start] <= 13) &&(start<nc-1)) start++;
 				end = start;
-				while (msg[end] > 13) end++;
+				while ((msg[end] > 13) && (end<nc-1)) end++;
 				msg[end] = 0;
 				SetDlgItemText(IDC_VERSION, &msg[start]);
 
@@ -657,7 +657,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			SetTimer(1, 1000 / pRate->GetPos(), NULL);
 
 		memset(inbuf.data, 0, sizeof(GPM_T));
-		Send("*GG", 3);
+		Send("*GG\r", 3);
 		Recv((char*)inbuf.data, &nc);		
 		if (nc > 0)
 		{			

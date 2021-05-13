@@ -219,7 +219,7 @@ UINT __cdecl ProcServerThreadFunction(LPVOID pParam)
 					if (fSuccess == 0) {
 						int nErr = GetLastError();
 						char errMsg[250];
-						FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
+						FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 250, NULL);
 						TRACE1("Error sending to GPM: %s\r\n", errMsg);
 					}
 				}
@@ -348,7 +348,7 @@ UINT __cdecl ProcSimulinkThreadFunction(LPVOID pParam)
 	if (fSuccess == 0) {
 		int nErr = GetLastError();
 		char errMsg[250];
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 250, NULL);
 		TRACE1("Error sending to GPM: %s\r\n", errMsg);
 	}
 
@@ -409,7 +409,7 @@ UINT __cdecl ProcSimulinkThreadFunction(LPVOID pParam)
 			if (fSuccess == 0) {
 				int nErr = GetLastError();
 				char errMsg[250];
-				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
+				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 250, NULL);
 				TRACE1("Error sending to GPM: %s\r\n", errMsg);
 			}
 		}
