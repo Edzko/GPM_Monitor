@@ -236,7 +236,9 @@ BOOL CGPM_MonitorDlg::OnInitDialog()
 	pPort->EnableWindow(0);
 	portname = AfxGetApp()->GetProfileString("", "server", "");
 	pSvrCOMList->SelectString(0, portname);
-
+	pUpdate = (CProgressCtrl*)GetDlgItem(IDC_PROGRESS);
+	pUpdate->ShowWindow(false);
+	pUpdate->SetRange(0, 100);
 
 	pSimulinkCOMList = (CComboBox*)GetDlgItem(IDC_SIMULINKCOMLIST);
 	GetCOMPorts(pSimulinkCOMList);
@@ -279,6 +281,20 @@ BOOL CGPM_MonitorDlg::OnInitDialog()
 	int sim = AfxGetApp()->GetProfileInt("", "simulink", 0);
 	if (sim) pServer->SetCheck(BST_CHECKED);
 	simrunning = false;
+
+	JOY_ID = -1;
+	Joystick.dwXpos = 0;
+	Joystick.dwYpos = 0;
+	Joystick.dwRpos = 0;
+	Joystick.dwUpos = 0;
+	Joystick.dwVpos = 0;
+	Joystick.dwZpos = 0;
+	Joystick.dwButtons = 0;
+
+	jx = 32768;
+	jy = 32768;
+	jr = 32768;
+	jb = 0;
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -474,7 +490,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 
 			char msg[500];
 			Send("?v\r",3);
-			Sleep(100);
+			Sleep(500);
 			int nc = 500;
 			Recv(msg,&nc);
 			TRACE1("Error: %s\r\n",msg);
@@ -656,9 +672,54 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 		else 
 			SetTimer(1, 1000 / pRate->GetPos(), NULL);
 
+
+		if (JOY_ID == -1)
+		{
+			// initialize joystick
+			JOY_ID = JOYSTICKID1;
+			Joystick.dwSize = sizeof(JOYINFOEX);
+			Joystick.dwFlags = JOY_RETURNALL;
+			mResult = joyGetPosEx(JOY_ID, &Joystick);
+			if (mResult != JOYERR_NOERROR) {
+				JOY_ID = JOYSTICKID2;
+				Joystick.dwSize = sizeof(JOYINFOEX);
+				Joystick.dwFlags = JOY_RETURNALL;
+				mResult = joyGetPosEx(JOY_ID, &Joystick);
+			}
+			if (mResult == JOYERR_NOERROR) {
+				mResult = joyGetDevCaps(JOY_ID, &JoyCaps, sizeof(JoyCaps));
+			}
+			else { JOY_ID = -1; }
+			jb = 0;
+			jx = jy = jr = 0;
+
+		}
+		else {
+			mResult = joyGetPosEx(JOY_ID, &Joystick);
+			jx = Joystick.dwXpos;
+			jy = Joystick.dwYpos;
+			jr = Joystick.dwRpos;
+			jb = Joystick.dwButtons;
+
+			// Must hold button 1 to drive
+			if ((jb & 1) == 0)
+				jx = jy = jr = 0;
+
+			sprintf_s(txt, 500, "Steer: %i", (int)(jx)-0x8000);
+			SetDlgItemText(IDC_JOYX, txt);
+			sprintf_s(txt, 500, "Speed: %i", (int)(jy)-0x8000);
+			SetDlgItemText(IDC_JOYY, txt);
+			sprintf_s(txt, 500, "Steer: %X", (int)(jb));
+			SetDlgItemText(IDC_JOYB, txt);
+		}
+	
+
 		memset(inbuf.data, 0, sizeof(GPM_T));
-		Send("*GG\r", 3);
-		Recv((char*)inbuf.data, &nc);		
+		//Send("*GG\r", 3);
+		sprintf_s(txt, 500, "MC4,%i,%i,%i\r", ((int)(jx)-0x7FFF), ((int)(jy)-0x7FFF), jb);
+		Send(txt, strlen(txt)); 
+		
+		Recv((char*)inbuf.data, &nc);
 		if (nc > 0)
 		{			
 			int h = (int)(inbuf.rec.time / (1000 * 60 * 60));
@@ -750,8 +811,9 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 		if ((nc >= 1)||(iFW==0))
 		{
 			wFW = 0;
-			sprintf_s(txt, 100, "Upgrading: pkt=%i/%i",iFW/ BLK_FWSIZE,nFW/ BLK_FWSIZE);
-			SetDlgItemText(IDC_GPMTIME, txt);
+			//sprintf_s(txt, 100, "Upgrading: pkt=%i/%i",iFW/ BLK_FWSIZE,nFW/ BLK_FWSIZE);
+			//SetDlgItemText(IDC_GPMTIME, txt);
+			pUpdate->SetPos(iFW * 100 / nFW);
 			if ((rtn[0] == 'K') || (iFW==0)) { // okay. send next
 				if (iFW >= nFW) {  // finished
 					KillTimer(4);
@@ -766,7 +828,10 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 					SetTimer(1, 1000, NULL);
 					SetTimer(2, 1000, NULL);
 					upgrading = false;
+					pUpdate->ShowWindow(false);
+					pUpdate->SetPos(0);
 					SetDlgItemText(IDC_UPDATE, "Firmware Update");
+					SetDlgItemText(IDC_GPMTIME, "Firmware update complete.");
 					OnBnClickedConnect(); // Disconnect, because system reboots
 				} else {					
 					memcpy(fwdata+0x10, &fwfile[iFW], BLK_FWSIZE);
@@ -794,6 +859,10 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 				KillTimer(4);
 				SetTimer(1, 1000, NULL);
 				SetTimer(2, 1000, NULL);
+				upgrading = false;
+				SetDlgItemText(IDC_UPDATE, "Firmware Update");
+				pUpdate->ShowWindow(false);
+				//OnBnClickedConnect(); // Disconnect, because system reboots
 			};
 		}
 		else {
@@ -905,6 +974,8 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 				if (msg[nc - 1] == 'K') {
 					SetTimer(4, 10, NULL);
 					SetDlgItemText(IDC_UPDATE, "Cancel");
+					SetDlgItemText(IDC_GPMTIME, "Updating");
+					pUpdate->ShowWindow(true);
 					break;
 				}
 			}

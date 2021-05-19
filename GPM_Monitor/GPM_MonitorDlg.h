@@ -4,6 +4,7 @@
 #pragma once
 #include <sys/timeb.h>
 #include <time.h>
+#include <mmsystem.h> 
 
 #define MAXPNTS 1000
 
@@ -112,6 +113,7 @@ public:
 	CButton *pAutoConnect, *pServer, *pSimulink;
 	CComboBox *pCOMList, *pSvrCOMList, *pSimulinkCOMList;
 	CSliderCtrl* pRate;
+	CProgressCtrl* pUpdate;
 
 	sockaddr_in si_other;
 	SOCKET gpmSock;
@@ -123,6 +125,12 @@ public:
 	unsigned short crc;
 	int iFW, nFW, wFW;
 	FILE *fw;
+
+	JOYINFOEX Joystick;
+	JOYCAPS JoyCaps;
+	MMRESULT mResult;
+	UINT JOY_ID;
+	int jx, jy, jr, jb;
 
 	int sim_dt;  // in ms
 	int sim_cnt; // message count
