@@ -11,6 +11,8 @@
 // Dialogs (IDD_*) 
 #define HIDD_ABOUTBOX                           0x20064
 #define HIDD_GPM_MONITOR_DIALOG                 0x20066
+#define HIDD_DIALOG1                            0x20083
+#define HIDD_AHRS                               0x20083
  
 // Frame Controls (IDW_*) 
 // This is a part of the Microsoft Foundation Classes C++ library.

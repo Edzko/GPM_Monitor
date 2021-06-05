@@ -170,6 +170,18 @@ BEGIN
     CONTROL         "",IDC_PROGRESS,"msctls_progress32",WS_BORDER,50,155,153,14
 END
 
+IDD_AHRS DIALOGEX 0, 0, 309, 176
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "Attitude & Heading Reference"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Compass:",IDC_COMPASS_FRAME,7,7,121,106
+    GROUPBOX        "Orientation:",IDC_INS_FRAME,181,7,121,106
+    GROUPBOX        "Position:",IDC_POSITION_FRAME,7,119,295,50
+    LTEXT           "Static",IDC_POSITION,19,140,275,8
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -233,6 +245,14 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 363
     END
+
+    IDD_AHRS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 302
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 169
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -243,6 +263,11 @@ END
 //
 
 IDD_GPM_MONITOR_DIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_AHRS AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

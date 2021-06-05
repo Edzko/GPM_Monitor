@@ -168,8 +168,19 @@ int main(int argc, char* argv[])
 	
 	// Enter "upload firmware" mode of the App
 	int n = 0;
+	int iproc = 0;
+	if (strstr(fwfilename, "0512EFF")) iproc = 1;
+	if (strstr(fwfilename, "1024EFM")) iproc = 2;
+	if (strstr(fwfilename, "2048EFH")) iproc = 3;
+	if (iproc == 0) {
+		printf("Firmware not suitable for this module.\r\nMake sure that the filename includes the Processor type.\r\n");
+		WSACleanup();
+		return 1;
+	}
+	
 	for (n = 0; n < 3; n++) {
-		nResult = send(gpmSock, "rs3\r", 4, 0);
+		sprintf_s(msg, 100, "rs3,%i\r", iproc);
+		nResult = send(gpmSock, msg, (int)strlen(msg), 0);
 		if (nResult == SOCKET_ERROR)
 		{
 			int nErr = WSAGetLastError();
@@ -190,7 +201,21 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
-		if (msg[nc - 1] == 'K') break;
+		if (nc > 0) {
+			if (msg[nc - 1] == 'K') 
+				break;
+			if (msg[nc - 1] == 'X') {
+				printf("Firmware not suitable for this module.\r\n");
+				WSACleanup();
+				return 1;
+				break;
+			}
+		}
+	}
+	if (n == 3) {
+		printf("No response from device.\r\n");
+		WSACleanup();
+		return 0;
 	}
 	if (msg[nc - 1] != 'K') {   //acknowledge firmware upload
 		printf("Could not enter firmware upload mode\r\n");

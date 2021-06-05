@@ -17,29 +17,32 @@
 
 typedef union
 {
-	unsigned char data[200];
+	/** Binary access to GPM data record */
+	uint8_t data[100];
+	/** Structure data record with GPM information */
 	struct {
-		uint64_t time;
-		long double latitude;
-		long double longitude;
-		float heading;  // 24
+		uint64_t time;          ///< Current system time
+		long double latitude;   ///< Latitude in degrees
+		long double longitude;  ///< Longitude in degrees
+		float heading;          ///< Current heading
 		float std;
-		float Vpp;
-		uint16_t posType;  //36
-		int16_t steer;
-		int16_t brake;
-		int16_t rpm;
-		int16_t speed;
-		int16_t gear;
-		float vehEm_loc; // 58
+		float Vpp;              ///< Power Voltage level in Volts
+		uint16_t posType;       ///< GPS positioning Type
+		int16_t steer;          ///< Vehicle Steering angle measurement
+		int16_t brake;          ///< Vehicle Brake Pressure measurement
+		int16_t rpm;            ///< Current engine rpm
+		int16_t speed;          ///< Current vehicle speed measurement
+		int16_t gear;           ///< Current Vehicle Gear (See JEEP specs for value definition)
+		float vehEm_loc; // 44
 		float vehNm_loc;
 		float vehHrad_loc;
 		float error_Em;
 		float error_Nm;
-		float error_Hdeg;
+		float error_Hdeg; //64
 		int16_t nSats;
 		uint16_t wheelspeed[4];
 		uint16_t WF_State;
+		float roll, pitch, yaw; //78
 	} rec;
 } GPM_T;
 
@@ -107,13 +110,15 @@ public:
 	COMMTIMEOUTS CommTimeouts;
 	unsigned int stat;
 	FILE *logFile;
-	char logFilename[100];
+	char logFilename[1000];
 	CONFIG_DATA cfgdata;
 
 	CButton *pAutoConnect, *pServer, *pSimulink;
 	CComboBox *pCOMList, *pSvrCOMList, *pSimulinkCOMList;
 	CSliderCtrl* pRate;
 	CProgressCtrl* pUpdate;
+
+	CGPM_AHRS *pAhrsDlg;
 
 	sockaddr_in si_other;
 	SOCKET gpmSock;

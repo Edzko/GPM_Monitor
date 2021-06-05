@@ -1,5 +1,6 @@
 
 #include "stdafx.h"
+#include "GPM_AHRS.h"
 #include "GPM_Monitor.h"
 #include "GPM_MonitorDlg.h"
 

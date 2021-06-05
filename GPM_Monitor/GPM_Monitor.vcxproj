@@ -125,6 +125,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GPM_AHRS.cpp" />
     <ClCompile Include="GPM_Monitor.cpp" />
     <ClCompile Include="GPM_MonitorDlg.cpp" />
     <ClCompile Include="GPM_MonitorThreads.cpp" />
@@ -174,6 +175,7 @@ makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(Filename)%(Extension)" &gt;&gt; "hlp\
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">hlp\HTMLDefines.h;%(Outputs)</Outputs>
     </CustomBuild>
+    <ClInclude Include="GPM_AHRS.h" />
     <ClInclude Include="GPM_Monitor.h" />
     <ClInclude Include="GPM_MonitorDlg.h" />
     <ClInclude Include="hlp\HTMLDefines.h" />

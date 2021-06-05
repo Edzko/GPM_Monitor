@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include <Setupapi.h>
 #include <Devguid.h>
+#include "GPM_AHRS.h"
 #include "GPM_Monitor.h"
 #include "GPM_MonitorDlg.h"
 
@@ -669,9 +670,12 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 	{
 		if (Connected == 0)
 			KillTimer(1);
-		else 
-			SetTimer(1, 1000 / pRate->GetPos(), NULL);
-
+		else {
+			pRate = (CSliderCtrl*)GetDlgItem(IDC_RATE);
+			int rate = pRate->GetPos();
+			if (rate>0)
+				SetTimer(1, 1000 / rate, NULL);
+		}
 
 		if (JOY_ID == -1)
 		{
@@ -965,22 +969,43 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 		{
 			// Enter "upload firmware" mode of the App
 			int n = 0;
-			for (n = 0; n < 3; n++) {
-				Send("rs3\r", 4);
-				Sleep(100);
-				nc = 100;
-				while (nc == 100)
-					Recv(msg, &nc);
-				if (msg[nc - 1] == 'K') {
-					SetTimer(4, 10, NULL);
-					SetDlgItemText(IDC_UPDATE, "Cancel");
-					SetDlgItemText(IDC_GPMTIME, "Updating");
-					pUpdate->ShowWindow(true);
-					break;
-				}
-			}
-			if (n==3) {
+			int iproc = 0;
+			if (strstr(ofn.lpstrFile, "0512EFF")) iproc = 1;
+			if (strstr(ofn.lpstrFile, "1024EFM")) iproc = 2;
+			if (strstr(ofn.lpstrFile, "2048EFH")) iproc = 3;
+			if (iproc == 0) {
+				MessageBox("Firmware not suitable for this module. Make sure that the filename includes the Processor type.", "GPM Update Error", MB_OK | MB_ICONINFORMATION);
 				SetTimer(1, 1000 / pRate->GetPos(), NULL);
+			}
+			else {
+				for (n = 0; n < 3; n++) {
+					//sprintf_s(msg, 100, "rs3\r");
+					sprintf_s(msg, 100, "rs3,%i\r", iproc);
+					Send(msg, (int)strlen(msg));
+					Sleep(100);
+					nc = 100;
+					while (nc == 100)
+						Recv(msg, &nc);
+					if (nc > 0) {
+						if (msg[nc - 1] == 'K') {
+							SetTimer(4, 10, NULL);
+							SetDlgItemText(IDC_UPDATE, "Cancel");
+							SetDlgItemText(IDC_GPMTIME, "Updating");
+							pUpdate = (CProgressCtrl*)GetDlgItem(IDC_PROGRESS);
+							pUpdate->ShowWindow(true);
+							break;
+						}
+						if (msg[nc - 1] == 'X') {
+							MessageBox("Firmware not suitable for this module.", "GPM Update Error", MB_OK | MB_ICONINFORMATION);
+							n = 3;
+							break;
+						}
+					}
+				}
+				if (n == 3) {
+					upgrading = false;
+					SetTimer(1, 1000 / pRate->GetPos(), NULL);
+				}
 			}
 		}
 		
