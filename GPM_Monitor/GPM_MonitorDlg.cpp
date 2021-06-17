@@ -514,6 +514,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 				SetDlgItemText(IDC_CONNECT,"Disconnect");
 				pCom->EnableWindow(false);
 				pFW->EnableWindow(true);
+				ambootloader = false;
 			}
 			else {
 				shutdown(gpmSock, SD_SEND);
@@ -871,7 +872,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 		}
 		else {
 			wFW++;
-			if (wFW > 10)
+			if (wFW > 5)
 			{
 				Send((char*)fwdata, BLK_FWSIZE+0x10); // timeout; send again
 				wFW = 0;
@@ -988,7 +989,7 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 						Recv(msg, &nc);
 					if (nc > 0) {
 						if (msg[nc - 1] == 'K') {
-							SetTimer(4, 10, NULL);
+							SetTimer(4, 100, NULL);
 							SetDlgItemText(IDC_UPDATE, "Cancel");
 							SetDlgItemText(IDC_GPMTIME, "Updating");
 							pUpdate = (CProgressCtrl*)GetDlgItem(IDC_PROGRESS);
@@ -1016,6 +1017,7 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 		upgrading = false;
 		Sleep(100);
 		SetDlgItemText(IDC_UPDATE, "Firmware Update");
+		pUpdate->ShowWindow(false);
 	}
 }
 
