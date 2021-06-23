@@ -443,7 +443,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 
 	KillTimer(4);
 
-	if (com==100)
+	if ((com==100) || (com==-1))
 	{
 		if (Connected==2)
 		{
@@ -460,9 +460,15 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 		} else {
 			gpmSock=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 			USHORT port = 2000;
-			pCom->GetLBText(pCom->GetCurSel(),CommPort);
-			strcpy_s(msg,100,&CommPort[6]);
-			for (int i=0;i<100;i++) if (msg[i]==')') msg[i]=0;
+			int iCom = pCom->GetCurSel();
+			if (iCom == -1)
+				GetDlgItemText(IDC_COMLIST, msg, 100);
+			else {
+				pCom->GetLBText(iCom, CommPort);
+				//pCom->GetDlgItemText(CommPort);
+				strcpy_s(msg, 100, &CommPort[6]);
+				for (int i = 0; i < 100; i++) if (msg[i] == ')') msg[i] = 0;
+			}
 			sa.sin_family = AF_INET;
 			sa.sin_addr.s_addr = inet_addr(msg);
 			sa.sin_port = htons(port);
@@ -627,7 +633,8 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 	if (Connected>0)
 	{
 		CString portname;
-		pCom->GetLBText(pCom->GetCurSel(),portname);
+		//pCom->GetLBText(pCom->GetCurSel(),portname);
+		GetDlgItemText(IDC_COMLIST, portname);
 		AfxGetApp()->WriteProfileString("","port",portname);
 		
 	
