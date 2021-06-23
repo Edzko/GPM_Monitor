@@ -696,7 +696,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 			}
 			else { JOY_ID = -1; }
 			jb = 0;
-			jx = jy = jr = 0;
+			jx = jy = jr = 0x8000;
 
 		}
 		else {
@@ -708,7 +708,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 
 			// Must hold button 1 to drive
 			if ((jb & 1) == 0)
-				jx = jy = jr = 0;
+				jx = jy = jr = 0x8000;
 
 			sprintf_s(txt, 500, "Steer: %i", (int)(jx)-0x8000);
 			SetDlgItemText(IDC_JOYX, txt);
@@ -979,7 +979,7 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 				SetTimer(1, 1000 / pRate->GetPos(), NULL);
 			}
 			else {
-				for (n = 0; n < 3; n++) {
+				for (n = 0; n < 10; n++) {
 					//sprintf_s(msg, 100, "rs3\r");
 					sprintf_s(msg, 100, "rs3,%i\r", iproc);
 					Send(msg, (int)strlen(msg));

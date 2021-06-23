@@ -38,6 +38,16 @@ CGPM_MonitorApp theApp;
 
 BOOL CGPM_MonitorApp::InitInstance()
 {
+
+	HWND GPMWND;
+	if ((GPMWND = FindWindow("#32770", "Global Positioning Monitor")) != 0) {
+		// window exists; another instance of this
+		// application is already running -> exit
+		// perhaps should refresh:
+		SetForegroundWindow(GPMWND);
+		return false;
+	}
+
 	// InitCommonControlsEx() is required on Windows XP if an application
 	// manifest specifies use of ComCtl32.dll version 6 or later to enable
 	// visual styles.  Otherwise, any window creation will fail.
