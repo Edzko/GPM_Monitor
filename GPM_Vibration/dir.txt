@@ -1,0 +1,34 @@
+ Volume in drive C is Windows
+ Volume Serial Number is 4855-D449
+
+ Directory of C:\Projects\GPS\UBlox\GPM_Monitor\GPM_Vibration
+
+06/27/2021  10:34 AM    <DIR>          .
+06/27/2021  10:34 AM    <DIR>          ..
+06/27/2021  10:30 AM                21 Build.bat
+06/27/2021  10:30 AM                25 Build.h
+06/27/2021  10:34 AM    <DIR>          Debug
+06/27/2021  10:34 AM                 0 dir.txt
+06/27/2021  10:33 AM                28 getjwt.bat
+06/27/2021  10:16 AM             2,447 GetJWT.py
+06/27/2021  09:12 AM            66,144 GPM_Vibration.aps
+06/26/2021  06:46 PM            34,997 GPM_Vibration.chm
+06/26/2021  06:46 PM             2,475 GPM_Vibration.cpp
+06/26/2021  06:33 PM               619 GPM_Vibration.h
+06/27/2021  09:12 AM             9,728 GPM_Vibration.rc
+06/26/2021  06:32 PM            11,812 GPM_Vibration.vcxproj
+06/26/2021  06:32 PM             2,432 GPM_Vibration.vcxproj.filters
+06/26/2021  09:56 PM               236 GPM_Vibration.vcxproj.user
+06/27/2021  10:34 AM            22,136 GPM_VibrationDlg.cpp
+06/27/2021  09:58 AM             6,069 GPM_VibrationDlg.h
+06/27/2021  10:00 AM             1,855 GPM_VibrationThreads.cpp
+06/26/2021  06:33 PM    <DIR>          hlp
+06/27/2021  10:30 AM                45 MyDate.h
+06/27/2021  09:55 AM                83 post_data.bat
+06/26/2021  06:27 PM    <DIR>          res
+06/27/2021  09:10 AM             2,312 resource.h
+06/26/2021  06:33 PM               213 stdafx.cpp
+07/03/2019  07:39 PM             2,912 stdafx.h
+07/03/2019  07:39 PM               277 UpdateBuild.bat
+              22 File(s)        166,866 bytes
+               5 Dir(s)  122,687,946,752 bytes free

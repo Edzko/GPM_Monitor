@@ -1,0 +1,325 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#include ""res\\GPM_Vibration.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""afxres.rc""     // Standard components\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\GPM_Vibration.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 235, 55
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About GPM_Vibration"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
+    LTEXT           "GPM_Vibration Version 1.0",IDC_BUILD,40,10,119,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) TEC, LLC 2018",IDC_STATIC,39,35,119,8
+    DEFPUSHBUTTON   "OK",IDOK,178,7,50,16,WS_GROUP
+    LTEXT           "GPM_Vibration Date",IDC_MYDATE,39,22,119,8,SS_NOPREFIX
+END
+
+IDD_GPM_Vibration_DIALOG DIALOGEX 0, 0, 419, 291
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTEXTHELP | WS_EX_APPWINDOW
+CAPTION "Vibration Monitor"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    PUSHBUTTON      "&Help",ID_HELP,362,191,50,16
+    COMBOBOX        IDC_COMLIST,27,28,170,55,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Version:",IDC_VERSION,27,41,222,8
+    LTEXT           "Vpp:",IDC_STATIC,329,115,16,8
+    EDITTEXT        IDC_VPP,350,111,51,14,ES_AUTOHSCROLL
+    GROUPBOX        "Communication:",IDC_STATIC,7,7,405,87
+    GROUPBOX        "Status & Control:",IDC_STATIC,7,98,405,34
+    PUSHBUTTON      "Firmware Update",IDC_UPDATE,214,27,67,16
+    LTEXT           "Time: ",IDC_GPMTIME,14,114,90,8
+    PUSHBUTTON      "Restart Log",IDC_BUTTON1,362,172,50,16
+    LTEXT           "GPM Monitor:",IDC_STATIC,27,20,44,8
+    CONTROL         "",IDC_RATE,"msctls_trackbar32",TBS_AUTOTICKS | TBS_BOTH | WS_TABSTOP,222,112,100,15
+    CONTROL         "",IDC_PROGRESS,"msctls_progress32",WS_BORDER,50,112,153,14
+    PUSHBUTTON      "Cancel",IDCANCEL,362,210,50,16
+    DEFPUSHBUTTON   "OK",IDOK,362,268,50,16
+    COMBOBOX        IDC_SAMPLESIZE,48,171,48,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "SampleSize",IDC_STATIC,8,174,36,8
+    COMBOBOX        IDC_DWNSAMPLES,48,187,48,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "downSmple",IDC_STATIC,8,190,37,8
+    COMBOBOX        IDC_FFTWNDFCN,47,203,48,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "FFT WndFc",IDC_STATIC,7,206,37,8
+    COMBOBOX        IDC_SCALE,47,218,48,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Scale",IDC_STATIC,23,222,18,8
+    COMBOBOX        IDC_AXIS,47,235,48,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Axis",IDC_STATIC,24,238,14,8
+    LTEXT           "Gain",IDC_STATIC,23,254,15,8
+    EDITTEXT        IDC_GAIN,47,251,48,14,ES_AUTOHSCROLL
+    LTEXT           "Synth Freq",IDC_STATIC,8,273,36,8
+    EDITTEXT        IDC_FREQ,47,270,48,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PROJECT,27,67,88,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_DEVICE,119,67,88,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_TOPIC,211,67,88,14,ES_AUTOHSCROLL
+    CONTROL         "Post",IDC_POST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,368,70,30,10
+    LTEXT           "Project",IDC_STATIC,28,58,24,8
+    LTEXT           "Device",IDC_STATIC,119,58,22,8
+    LTEXT           "Topic",IDC_STATIC,211,57,18,8
+    PUSHBUTTON      "",IDC_KEY,303,67,50,14
+    LTEXT           "Keys",IDC_STATIC,304,58,16,8
+    PUSHBUTTON      "Post",IDC_POSTNOW,362,48,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904e4"
+        BEGIN
+            VALUE "CompanyName", "TODO: <Company name>"
+            VALUE "FileDescription", "TODO: <File description>"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "GPM_Vibration.exe"
+            VALUE "LegalCopyright", "TODO: (c) <Company name>.  All rights reserved."
+            VALUE "OriginalFilename", "GPM_Vibration.exe"
+            VALUE "ProductName", "TODO: <Product name>"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 228
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 48
+    END
+
+    IDD_GPM_Vibration_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 412
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 284
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_GPM_Vibration_DIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_AHRS AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_GPM_Vibration_DIALOG DLGINIT
+BEGIN
+    IDC_SAMPLESIZE, 0x403, 5, 0
+0x3032, 0x3834, "\000" 
+    IDC_SAMPLESIZE, 0x403, 5, 0
+0x3031, 0x3432, "\000" 
+    IDC_SAMPLESIZE, 0x403, 4, 0
+0x3135, 0x0032, 
+    IDC_DWNSAMPLES, 0x403, 2, 0
+0x0031, 
+    IDC_DWNSAMPLES, 0x403, 2, 0
+0x0032, 
+    IDC_DWNSAMPLES, 0x403, 2, 0
+0x0033, 
+    IDC_DWNSAMPLES, 0x403, 2, 0
+0x0034, 
+    IDC_DWNSAMPLES, 0x403, 2, 0
+0x0035, 
+    IDC_DWNSAMPLES, 0x403, 2, 0
+0x0036, 
+    IDC_DWNSAMPLES, 0x403, 2, 0
+0x0037, 
+    IDC_DWNSAMPLES, 0x403, 2, 0
+0x0038, 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x6552, 0x7463, "\000" 
+    IDC_FFTWNDFCN, 0x403, 6, 0
+0x6147, 0x7375, 0x0073, 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x6148, 0x6d6d, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x6148, 0x6e6e, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x6142, 0x7472, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x6c57, 0x6863, "\000" 
+    IDC_FFTWNDFCN, 0x403, 9, 0
+0x7254, 0x6169, 0x676e, 0x656c, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x7242, 0x6e68, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x6c42, 0x6d6b, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x614b, 0x7369, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x754e, 0x6c74, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x6b42, 0x6168, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x6b42, 0x756e, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x6c46, 0x7474, "\000" 
+    IDC_FFTWNDFCN, 0x403, 5, 0
+0x6953, 0x656e, "\000" 
+    IDC_SCALE, 0x403, 7, 0
+0x694c, 0x656e, 0x7261, "\000" 
+    IDC_SCALE, 0x403, 4, 0
+0x6f4c, 0x0067, 
+    IDC_AXIS, 0x403, 2, 0
+0x0058, 
+    IDC_AXIS, 0x403, 2, 0
+0x0059, 
+    IDC_AXIS, 0x403, 2, 0
+0x005a, 
+    IDC_AXIS, 0x403, 4, 0
+0x5958, 0x005a, 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_ABOUTBOX            "&About GPM_Vibration..."
+    IDP_SOCKETS_INIT_FAILED "Windows sockets initialization failed."
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#include "res\GPM_Vibration.rc2"  // non-Microsoft Visual C++ edited resources
+#include "afxres.rc"     // Standard components
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

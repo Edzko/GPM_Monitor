@@ -1,0 +1,1 @@
+python GetJWT.py -p %1 -k %2
