@@ -18,7 +18,7 @@ UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam)
 	s = socket(AF_INET, SOCK_DGRAM, 0);   // UDP
 	int port = 55555;
 	char broadcast = 1;
-	bool found = false;
+	//bool found = false;
 	//setsockopt(s, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
 
 	memset(&si_me, 0, sizeof(si_me));
@@ -26,12 +26,14 @@ UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam)
 	si_me.sin_port = htons(port);
 	si_me.sin_addr.s_addr = INADDR_ANY;
 
-	int timeout = 500;
+	int timeout = 100;
 	setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
 
 	bind(s, (sockaddr*)&si_me, sizeof(sockaddr));
 
-	while (!found)
+	CString portname = AfxGetApp()->GetProfileString("", "Port", "");
+	//for (int i = 0; i < 100; i++) // check for 10 seconds
+	while (true) // always check
 	{
 		char buf[10000];
 		int slen = sizeof(sockaddr);
@@ -43,19 +45,24 @@ UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam)
 				dlg->si_other.sin_addr.S_un.S_un_b.s_b2,
 				dlg->si_other.sin_addr.S_un.S_un_b.s_b3,
 				dlg->si_other.sin_addr.S_un.S_un_b.s_b4);
-			int iList = dlg->pCOMList->AddString(txt);
+			// look for this entry in the COM list
+			int iList = dlg->pCOMList->FindString(0, txt);
+			// if not found, then add the IP in the list.
+			if (iList == CB_ERR)
+				iList = dlg->pCOMList->AddString(txt);
 			dlg->pCOMList->SetItemData(iList, 100);
+			// select, if it was last used
+			if (dlg->autoselect)
+				dlg->pCOMList->SelectString(0, portname);
 
-			found = true;
+			//found = true;
 		}
-		Sleep(100);
+		
 	}
 
-	CString portname = AfxGetApp()->GetProfileString("", "Port", "");
-	dlg->pCOMList->SelectString(0, portname);
-	CButton* pButton = (CButton*)dlg->GetDlgItem(IDC_CONNECT);
-	if (dlg->pAutoConnect->GetCheck())
-		dlg->PostMessage(WM_COMMAND, MAKEWPARAM(IDC_CONNECT, BN_CLICKED), (LPARAM)pButton->m_hWnd);
+	//CButton* pButton = (CButton*)dlg->GetDlgItem(IDC_CONNECT);
+	//if (dlg->pAutoConnect->GetCheck())
+	//	dlg->PostMessage(WM_COMMAND, MAKEWPARAM(IDC_CONNECT, BN_CLICKED), (LPARAM)pButton->m_hWnd);
 
 	AfxEndThread(0);
 	return false;

@@ -2,7 +2,6 @@
 // Microsoft Visual C++ generated include file.
 // Used by GPM_Vibration.rc
 //
-#define IDC_CONNECT                     3
 #define IDC_RESET                       4
 #define IDC_CAL                         5
 #define IDC_UPDATE                      5

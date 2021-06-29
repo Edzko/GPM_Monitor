@@ -105,6 +105,7 @@ BEGIN_MESSAGE_MAP(CGPM_MonitorDlg, CDialog)
 	ON_BN_CLICKED(IDC_NTRIP, &CGPM_MonitorDlg::OnBnClickedNtrip)
 	ON_BN_CLICKED(ID_HELP, &CGPM_MonitorDlg::OnBnClickedHelp)
 	ON_BN_CLICKED(IDC_SETUTCTIME, &CGPM_MonitorDlg::OnBnClickedSetutctime)
+	ON_CBN_SELCHANGE(IDC_COMLIST, &CGPM_MonitorDlg::OnCbnSelchangeComlist)
 END_MESSAGE_MAP()
 
 
@@ -225,7 +226,7 @@ BOOL CGPM_MonitorDlg::OnInitDialog()
 	{
 		pCOMList->SetCurSel(0);
 	}
-
+	autoselect = true;
 	//CComboBox* pVeh = (CComboBox*)GetDlgItem(IDC_VEHSEL);
 	//int selVeh = AfxGetApp()->GetProfileInt("", "vehSelect", 0);
 	//pVeh->SetCurSel(selVeh);
@@ -926,6 +927,7 @@ void CGPM_MonitorDlg::OnDestroy()
 		CancelIo(hCommPort);
 		CloseHandle(hCommPort);
 	}
+	TerminateThread(theApp.m_pDiscoverThread, 0);
 	
 	CDialog::OnDestroy();
 }
@@ -1154,4 +1156,10 @@ void CGPM_MonitorDlg::OnBnClickedHelp()
 void CGPM_MonitorDlg::OnBnClickedSetutctime()
 {
 	// Get Time and Date and set UBLOX receiver UTC time
+}
+
+
+void CGPM_MonitorDlg::OnCbnSelchangeComlist()
+{
+	autoselect = false;
 }

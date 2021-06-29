@@ -9,24 +9,6 @@
 
 typedef struct
 {
-	char name[100];
-	char ip[100];
-	SOCKET gpmSock;
-	int Connected;
-	bool upgrading;
-	bool ambootloader;
-	unsigned char data[1000];
-	int16_t vibpnts;           ///< Number of samples to capture per each FFT
-	uint8_t fftWnd;             ///< FFT Filtering Window function for Vibration data
-	uint8_t fftsamps;           ///< Number of samples to combine in the fft (downsampling)
-	uint8_t fftlog;             ///< Compute fft samples in (1:log) scale (0: linear)
-	uint8_t fftplotlines;       ///< Plot lines (1) instead of dots(0) in the display
-	float fftscale;             ///< scaling factor for vibration data
-	uint8_t fftfreq;
-} MODULE_T;
-
-typedef struct
-{
 	uint8_t version;            ///< version of this configuration record.
 	uint8_t assistnow : 1;        ///< Use AssistNow at startup
 	uint8_t vlsf : 1;             ///< vlsf model active/inactive
@@ -81,6 +63,28 @@ typedef struct
 	uint8_t fftfreq;            ///< Set frequency for synthesized data
 } CONFIG_DATA;
 
+typedef struct
+{
+	char name[100];
+	char ip[100];
+	char version[100];
+	SOCKET gpmSock;
+	int Connected;
+	bool upgrading;
+	bool ambootloader;
+	CONFIG_DATA cfgdata;
+	unsigned char data[1000];
+	int16_t vibpnts;           ///< Number of samples to capture per each FFT
+	uint8_t fftWnd;             ///< FFT Filtering Window function for Vibration data
+	uint8_t fftsamps;           ///< Number of samples to combine in the fft (downsampling)
+	uint8_t fftlog;             ///< Compute fft samples in (1:log) scale (0: linear)
+	uint8_t fftplotlines;       ///< Plot lines (1) instead of dots(0) in the display
+	float fftscale;             ///< scaling factor for vibration data
+	uint8_t fftfreq;
+} MODULE_T;
+
+
+
 
 // following must match the embedded firmware
 #define MAX_FWSIZE (1500)
@@ -116,9 +120,12 @@ public:
 	MODULE_T vm[10];
 	void Send(char *msg, int len);
 	void Recv(char *msg, int *len);
-	void parseSP(char* msg, int len);
+	void parseSP(int im, char* msg, int len);
 	bool noUpdate;
 	void drawChart(CDC* dc);
+	void Connect(int ivm);
+	void Disconnect(int im);
+	void ProcessPeriodicVM(int ivm);
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
@@ -132,7 +139,6 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
-	afx_msg void OnBnClickedConnect();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedReset();
 	afx_msg void OnDestroy();

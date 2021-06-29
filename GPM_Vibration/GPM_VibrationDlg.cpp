@@ -291,10 +291,10 @@ void CGPM_VibrationDlg::Recv(char *msg, int *len)
 	else *len = 0;
 }
 
-void CGPM_VibrationDlg::parseSP(char* msg, int len)
+void CGPM_VibrationDlg::parseSP(int im, char* msg, int len)
 {
 	char valstr[10];
-	unsigned char *c = (unsigned char*)&cfgdata, ic = 0;
+	unsigned char *c = (unsigned char*)&vm[im].cfgdata, ic = 0;
 	memset(valstr, 0, 10);
 	// make sure string starts with "SP#"
 	for (int i = 3; i < len; i += 2) {
@@ -305,7 +305,18 @@ void CGPM_VibrationDlg::parseSP(char* msg, int len)
 	noUpdate = true;
 }
 
-
+void CGPM_VibrationDlg::Disconnect(int im)
+{
+	if ((vm[im].Connected == 2) && (vm[im].gpmSock))
+	{
+		shutdown(vm[im].gpmSock, SD_SEND);
+		Sleep(100);
+		closesocket(vm[im].gpmSock);
+		vm[im].gpmSock = NULL;
+		vm[im].Connected = 0;
+		strcpy_s(vm[im].ip, 100, "");
+	}
+}
 
 /// <summary>
 /// Connect to Cloud
@@ -313,29 +324,20 @@ void CGPM_VibrationDlg::parseSP(char* msg, int len)
 /// https://www.tutorialspoint.com/python/python_command_line_arguments.htm
 /// https://stackoverflow.com/questions/9776857/curl-simple-https-request-returns-nothing-c
 
-void CGPM_VibrationDlg::OnBnClickedConnect()
+void CGPM_VibrationDlg::Connect(int im)
 {
-	char CommPort[100], msg[100];
+	char msg[100];
 	int nResult;
-	CComboBox* pCom = (CComboBox*)GetDlgItem(IDC_COMLIST);
-	int com = (int)pCom->GetItemData(pCom->GetCurSel());
 	sockaddr_in sa;
 	CButton *pFW = (CButton*)GetDlgItem(IDC_UPDATE);
-	int im = 0;
 	KillTimer(4);
 
 	
 	vm[im].gpmSock=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	USHORT port = 2000;
-	int iCom = pCom->GetCurSel();
-	if (iCom == -1)
-		GetDlgItemText(IDC_COMLIST, msg, 100);
-	else {
-		pCom->GetLBText(iCom, CommPort);
-		//pCom->GetDlgItemText(CommPort);
-		strcpy_s(msg, 100, &CommPort[6]);
-		for (int i = 0; i < 100; i++) if (msg[i] == ')') msg[i] = 0;
-	}
+	strcpy_s(msg, 100, &vm[im].ip[6]);
+	for (int i = 0; i < 100; i++) if (msg[i] == ')') msg[i] = 0;
+	
 	sa.sin_family = AF_INET;
 	sa.sin_addr.s_addr = inet_addr(msg);
 	sa.sin_port = htons(port);
@@ -369,6 +371,7 @@ void CGPM_VibrationDlg::OnBnClickedConnect()
 	TRACE1("Error: %s\r\n",msg);
 	if (nc>0)
 	{
+		strcpy_s(vm[im].version, 100, msg);
 		int start = 0, end = 0;
 		while ((msg[start] <= 13) &&(start<nc-1)) start++;
 		end = start;
@@ -381,10 +384,8 @@ void CGPM_VibrationDlg::OnBnClickedConnect()
 		nc = 500;
 		Recv(msg, &nc);
 		if (nc > 0)
-			parseSP(msg, nc);
+			parseSP(im, msg, nc);
 		SetTimer(1,500,NULL);  
-		SetDlgItemText(IDC_CONNECT,"Disconnect");
-		pCom->EnableWindow(false);
 		pFW->EnableWindow(true);
 		vm[im].ambootloader = false;
 	}
@@ -427,48 +428,78 @@ void CGPM_VibrationDlg::OnBnClickedConnect()
 	}
 }
 
-void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
+void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 {
 	int nResult = 0;
 	char txt[500];
 	int nc = 1000;
 	int im = 0;
+
+	if (strlen(vm[ivm].ip) == 0)
+		return;
+
+	if (vm[ivm].Connected == 0)
+	{
+		Connect(ivm);
+		return;
+	}
+
+	if (vm[ivm].cfgdata.version == 0)
+	{
+		Send("sp#\r", 4);
+		Sleep(100);
+		nc = 500;
+		Recv(txt, &nc);
+		if (nc > 0)
+			parseSP(ivm, txt, nc);
+		return;
+	}
+
+	sprintf_s(txt, 500, "VI7\r");
+	Send(txt, strlen(txt));
+
+	Recv((char*)vm[im].data[0], &nc);
+	if (nc > 0)
+	{
+		if (nc >= 256) {
+			Invalidate(false);
+			UpdateWindow();
+		}
+		//CButton* pFlag = (CButton*)GetDlgItem(IDC_NTRIP);
+		//if (inbuf.rec.WF_State == 25) pFlag->SetCheck(BST_CHECKED); else pFlag->SetCheck(BST_UNCHECKED);
+
+		if (logFile)
+		{
+			//char timebuf[128];
+			//_strtime_s(timebuf, 128);
+			//fprintf(logFile, "%s,%f,%1.10lf,%1.10lf,%1.2f,%1.3f,%i,%i,%i,%i,%i,%i,%i,%i,%i\r\n", timebuf,
+			//	0.001*inbuf.rec.time, inbuf.rec.latitude, inbuf.rec.longitude, inbuf.rec.heading,
+			//	inbuf.rec.std, inbuf.rec.posType, inbuf.rec.steer, inbuf.rec.speed, inbuf.rec.brake, inbuf.rec.rpm,
+			//	inbuf.rec.wheelspeed[0], inbuf.rec.wheelspeed[1], inbuf.rec.wheelspeed[2], inbuf.rec.wheelspeed[3]);
+		}
+	}
+	else {
+		// disconnect ?
+	}
+
+}
+
+void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	int nResult = 0;
+	int nc = 1000;
+	int im = 0;
+
 	if (nIDEvent==1)
 	{
-		if (vm[im].Connected == 0)
-			KillTimer(1);
-		else {
-			pRate = (CSliderCtrl*)GetDlgItem(IDC_RATE);
-			int rate = pRate->GetPos();
-			if (rate>0)
-				SetTimer(1, 1000 / rate, NULL);
-		}
+		pRate = (CSliderCtrl*)GetDlgItem(IDC_RATE);
+		int rate = pRate->GetPos();
+		if (rate>0)
+			SetTimer(1, 1000 / rate, NULL);
 
-		sprintf_s(txt, 500, "VI7\r");
-		Send(txt, strlen(txt)); 
-		
-		Recv((char*)vm[im].data[0], &nc);
-		if (nc > 0)
-		{			
-			if (nc >= 256) {
-				Invalidate(false);
-				UpdateWindow();
-			}
-			//CButton* pFlag = (CButton*)GetDlgItem(IDC_NTRIP);
-			//if (inbuf.rec.WF_State == 25) pFlag->SetCheck(BST_CHECKED); else pFlag->SetCheck(BST_UNCHECKED);
-
-			if (logFile)
-			{
-				//char timebuf[128];
-				//_strtime_s(timebuf, 128);
-				//fprintf(logFile, "%s,%f,%1.10lf,%1.10lf,%1.2f,%1.3f,%i,%i,%i,%i,%i,%i,%i,%i,%i\r\n", timebuf,
-				//	0.001*inbuf.rec.time, inbuf.rec.latitude, inbuf.rec.longitude, inbuf.rec.heading,
-				//	inbuf.rec.std, inbuf.rec.posType, inbuf.rec.steer, inbuf.rec.speed, inbuf.rec.brake, inbuf.rec.rpm,
-				//	inbuf.rec.wheelspeed[0], inbuf.rec.wheelspeed[1], inbuf.rec.wheelspeed[2], inbuf.rec.wheelspeed[3]);
-			}
-		}	
-		//Invalidate(0);
-		//UpdateWindow();		
+		for (int ivm = 0; ivm < 10; ivm++)
+			ProcessPeriodicVM(ivm);
+	
 	}
 
 	if (nIDEvent==2)
@@ -511,7 +542,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 					pUpdate->SetPos(0);
 					SetDlgItemText(IDC_UPDATE, "Firmware Update");
 					SetDlgItemText(IDC_GPMTIME, "Firmware update complete.");
-					OnBnClickedConnect(); // Disconnect, because system reboots
+					Disconnect(im); // Disconnect, because system reboots
 				} else {					
 					memcpy(fwdata+0x10, &fwfile[iFW], BLK_FWSIZE);
 					fwdata[0] = 0x55;
@@ -567,7 +598,7 @@ void CGPM_VibrationDlg::OnBnClickedReset()
 	{
 		Send("rs0\r", 4);
 		Sleep(100);
-		OnBnClickedConnect();
+		Disconnect(im);
 	}
 }
 
@@ -598,7 +629,8 @@ void CGPM_VibrationDlg::OnDestroy()
 	GetDlgItemText(IDC_TOPIC, t);
 	AfxGetApp()->WriteProfileString("", "Topic", t);
 
-	
+	TerminateThread(theApp.m_pDiscoverThread, 0);
+
 	CDialog::OnDestroy();
 }
 
@@ -820,9 +852,13 @@ void CGPM_VibrationDlg::OnBnClickedKey()
 	FILE* fid;
 	fopen_s(&fid, "JWT.tok", "r");
 	if (fid) {
-		fread(jwt, 1000, 1, fid);
+		int n = fread(jwt, 1, 1000, fid);
 		fclose(fid);
+		if (n<1000)
+			jwt[n] = 0;
+		SetDlgItemText(IDC_KEY, "JWT.TOK");
 	}
+	else strcpy_s(jwt, 1000, "");
 }
 
 
@@ -836,8 +872,13 @@ void CGPM_VibrationDlg::OnBnClickedPostnow()
 	GetDlgItemText(IDC_DEVICE, device);
 	CString topic;
 	GetDlgItemText(IDC_TOPIC, topic);
+
 	char ccmd[2000];
-	sprintf_s(ccmd, 2000, "curl -X POST -H 'authorization: Bearer %s' -H 'content-type: application/json' --data '{\"ascii_data\": \"my first data\"}' -H 'cache-control: no-cache' 'https://cloudiotdevice.googleapis.com/v1/projects/%s/locations/%s/registries/%s/devices/%s:publishEvent'",
-		jwt, project.GetBuffer(), "global", "MAGNA_GPM_DEV_EDZKO", device.GetBuffer());
-	WinExec(ccmd, SW_HIDE);
+	sprintf_s(ccmd, 2000, "curl -X POST -H 'authorization: Bearer %s' -H 'content-type: application/json' --data '{\"ascii_data\": \"my first data\", \"%s\": \"VIB_DATA\"}' -H 'cache-control: no-cache' 'https://cloudiotdevice.googleapis.com/v1/projects/%s/locations/%s/registries/%s/devices/%s:publishEvent'",
+		jwt, topic.GetBuffer(), project.GetBuffer(), "global", "MAGNA_GPM_DEV_EDZKO", device.GetBuffer());
+	//WinExec(ccmd, SW_HIDE);
+	TRACE0(ccmd);
+	// use --libcurl <code.c> to generate code from curl command
+
+
 }

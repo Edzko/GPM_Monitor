@@ -135,6 +135,7 @@ public:
 	bool ambootloader;
 	bool svrrunning;
 	bool simrunning;
+	bool autoselect;
 	int svrcom;
 	unsigned short crc;
 	int iFW, nFW, wFW;
@@ -185,4 +186,5 @@ public:
 	afx_msg void OnBnClickedNtrip();
 	afx_msg void OnBnClickedHelp();
 	afx_msg void OnBnClickedSetutctime();
+	afx_msg void OnCbnSelchangeComlist();
 };
