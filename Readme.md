@@ -12,6 +12,8 @@ Console-based firmware upgrade utility. Run this utility on the same [Wifi] netw
 
 	GPM_UpdateLite [<ip-address>] <firmware.bin>
 
+Note: without an IP address provided, the App will connect to the first available module it finds.
+
 ## GPM Vibration App
 
 ![GUI](https://github.com/Edzko/GPM_Monitor/blob/master/GPM_Vibration/hlp/images/gpmgui.png)

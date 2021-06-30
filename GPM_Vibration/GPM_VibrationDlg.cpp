@@ -346,6 +346,9 @@ void CGPM_VibrationDlg::UpdateGUI(int im)
 
 	_itoa_s((int)(1000.0 * vm[im].cfgdata.fftscale), valstr, 10);
 	SetDlgItemText(IDC_GAIN, valstr);
+
+	//p = (CComboBox*)GetDlgItem(IDC_AXIS);
+	//p->SetCurSel(0);
 	
 	myupdate = false;
 }
@@ -360,9 +363,12 @@ void CGPM_VibrationDlg::parseSP(int im, char* msg, int len)
 		strncpy_s(valstr,10, &msg[i], 2);
 		sscanf_s(valstr, "%hhX", &c[ic++]);
 	}
+	if (cfgdata.version != 2) cfgdata.version = 0;
+	myupdate = true;
 	UpdateGUI(im);
+	myupdate = false;
+
 	TRACE0("Received Configurations.");
-	noUpdate = true;
 }
 
 void CGPM_VibrationDlg::Disconnect(int im)
@@ -375,7 +381,48 @@ void CGPM_VibrationDlg::Disconnect(int im)
 		vm[im].gpmSock = NULL;
 		vm[im].Connected = 0;
 		strcpy_s(vm[im].ip, 100, "");
+		vm[im].cfgdata.version = 0;
+		strcpy_s(vm[im].version, "");
 	}
+}
+
+void CGPM_VibrationDlg::GetVersion(int im)
+{
+	char msg[500];
+	Send(im, "?v\r", 3);
+	Sleep(100);
+	int nc = 500;
+	CButton* pFW = (CButton*)GetDlgItem(IDC_UPDATE);
+
+	Recv(im, msg, &nc);
+
+	if (nc > 0)
+	{
+		msg[nc - 1] = 0;
+		strcpy_s(vm[im].version, 100, msg);
+		int start = 0, end = 0;
+		while ((msg[start] <= 13) && (start < nc - 1)) start++;
+		end = start;
+		while ((msg[end] > 13) && (end < nc - 1)) end++;
+		msg[end] = 0;
+		SetDlgItemText(IDC_VERSION, &msg[start]);
+
+		TRACE1("Connected. Version:\r\n%s", msg);
+
+		vm[im].cfgdata.version = 0;
+
+		pFW->EnableWindow(true);
+		vm[im].ambootloader = false;
+		vm[im].cfgdata.version = 0;
+	}
+	//else 
+	//{
+	//	shutdown(vm[im].gpmSock, SD_SEND);
+	//	Sleep(100);
+	//	closesocket(vm[im].gpmSock);
+	//	vm[im].Connected = 0;
+	//	TRACE0("Disconnected.");
+	//}
 }
 
 /// <summary>
@@ -389,7 +436,7 @@ void CGPM_VibrationDlg::Connect(int im)
 	char msg[500];
 	int nResult;
 	sockaddr_in sa;
-	CButton *pFW = (CButton*)GetDlgItem(IDC_UPDATE);
+	
 	KillTimer(4);
 
 	
@@ -424,37 +471,7 @@ void CGPM_VibrationDlg::Connect(int im)
 
 	nResult = recv(vm[im].gpmSock,msg,100,0);
 
-	Send(im,"?v\r",3);
-	Sleep(100);
-	int nc = 500;
-	Recv(im, msg,&nc);
-	TRACE1("Error: %s\r\n",msg);
-	if (nc>0)
-	{
-		msg[nc-1] = 0;
-		strcpy_s(vm[im].version, 100, msg);
-		int start = 0, end = 0;
-		while ((msg[start] <= 13) &&(start<nc-1)) start++;
-		end = start;
-		while ((msg[end] > 13) && (end<nc-1)) end++;
-		msg[end] = 0;
-		SetDlgItemText(IDC_VERSION, &msg[start]);
 
-		TRACE1("Connected. Version:\r\n%s",msg);
-
-		vm[im].cfgdata.version = 0;
-
-		pFW->EnableWindow(true);
-		vm[im].ambootloader = false;
-	}
-	//else 
-	//{
-	//	shutdown(vm[im].gpmSock, SD_SEND);
-	//	Sleep(100);
-	//	closesocket(vm[im].gpmSock);
-	//	vm[im].Connected = 0;
-	//	TRACE0("Disconnected.");
-	//}
 		
 
 	if ((vm[im].Connected>0) && (logFile==NULL))
@@ -504,7 +521,13 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 		return;
 	}
 
-	if (vm[ivm].cfgdata.version == 0)
+	if (strlen(vm[ivm].version) == 0)
+	{
+		GetVersion(ivm);
+		return;
+	}
+
+	if (vm[ivm].cfgdata.version != 2)
 	{
 		Send(ivm, "sp#\r", 4);
 		Sleep(100);
@@ -514,13 +537,16 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 			parseSP(ivm, txt, nc);
 		return;
 	}
+
+
 	if (iAxis < 3)
 		sprintf_s(txt, 1000, "VI7,%i\r",iAxis);
 	else
 		sprintf_s(txt, 1000, "VI7\r");
 	Send(ivm, txt, strlen(txt));
-
+	Sleep(100);
 	Recv(ivm,(char*)vm[ivm].data, &nc);
+
 	if (nc > 0)
 	{
 		if (nc >= 128) {

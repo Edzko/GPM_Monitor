@@ -121,12 +121,12 @@ public:
 	void Send(int im, char *msg, int len);
 	void Recv(int im, char *msg, int *len);
 	void parseSP(int im, char* msg, int len);
-	bool noUpdate;
 	void drawChart(CDC* dc);
 	void Connect(int ivm);
 	void Disconnect(int im);
 	void ProcessPeriodicVM(int ivm);
 	void UpdateGUI(int im);
+	void GetVersion(int im);
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
