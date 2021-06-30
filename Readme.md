@@ -1,6 +1,6 @@
-# GPM Monitor
+# GPM Applications
 
-Companion Applications for Magna RTK-GPS UBlox module.
+Companion Applications for Magna RTK-GPS UBlox & Vibration module.
 
 ## GPM Monitor Windows User Interface
 
@@ -11,6 +11,10 @@ Companion Applications for Magna RTK-GPS UBlox module.
 Console-based firmware upgrade utility. Run this utility on the same [Wifi] network as the UBlox module. The utility can discover the module on the network, enter update firmware based on a firmware hex file provided in the command line.
 
 	GPM_UpdateLite [<ip-address>] <firmware.bin>
+
+## GPM Vibration App
+
+![GUI](https://github.com/Edzko/GPM_Monitor/blob/master/GPM_Vibration/hlp/images/gpmgui.png)
 
 ## GPM Command
 

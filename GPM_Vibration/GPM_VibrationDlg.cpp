@@ -842,7 +842,7 @@ void CGPM_VibrationDlg::OnEnChangeGain()
 
 	// TODO:  Add your control notification handler code here
 	CString msg;
-	GetDlgItemText(IDC_FREQ, msg);
+	GetDlgItemText(IDC_GAIN, msg);
 	msg = "SP80," + msg + "\r";
 	char* cmsg = msg.GetBuffer();
 	Send(cim, cmsg, msg.GetLength());
@@ -893,9 +893,10 @@ void CGPM_VibrationDlg::OnCbnSelchangeDwnsamples()
 	// TODO: Add your control notification handler code here
 	if (myupdate) return;
 	CComboBox* p = (CComboBox*)GetDlgItem(IDC_SCALE);
-	int i = p->GetCurSel();
-	if (i == 0) Send(cim, "SP85,0\r", 7);
-	else Send(cim, "SP85,1\r", 7);
+	int i = p->GetCurSel()+1;
+	char msg[10];
+	sprintf_s(msg, 10, "SP85,%i\r", i);
+	Send(cim, msg, strlen(msg));
 }
 
 
@@ -903,7 +904,7 @@ void CGPM_VibrationDlg::OnCbnSelchangeSamplesize()
 {
 	// TODO: Add your control notification handler code here
 	if (myupdate) return;
-	CComboBox* p = (CComboBox*)GetDlgItem(IDC_SCALE);
+	CComboBox* p = (CComboBox*)GetDlgItem(IDC_SAMPLESIZE);
 	int i = p->GetCurSel();
 	switch (i) {
 	case 0: Send(cim, "SP84,2048\r", 10); break;
