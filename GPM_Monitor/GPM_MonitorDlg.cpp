@@ -398,6 +398,9 @@ void CGPM_MonitorDlg::Recv(char *msg, int *len)
 				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
 				TRACE1("Error: %s\r\n", errMsg);
 			}
+			if (nErr == WSAECONNABORTED) {
+				OnBnClickedConnect();
+			}
 		}
 		*len = nResult;
 	} 
@@ -501,6 +504,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 			Sleep(500);
 			int nc = 500;
 			Recv(msg,&nc);
+			msg[nc] = 0;
 			TRACE1("Error: %s\r\n",msg);
 			if (nc>0)
 			{
@@ -680,7 +684,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 		if (Connected == 0)
 			KillTimer(1);
 		else {
-			pRate = (CSliderCtrl*)GetDlgItem(IDC_RATE);
+			//pRate = (CSliderCtrl*)GetDlgItem(IDC_RATE);
 			int rate = pRate->GetPos();
 			if (rate>0)
 				SetTimer(1, 1000 / rate, NULL);
@@ -944,6 +948,9 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 
 	if (upgrading == false)
 	{
+
+		KillTimer(1);
+
 		OPENFILENAME ofn;
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
@@ -973,8 +980,8 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 		fw = NULL;
 		iFW = 0;
 		wFW = 0;
-		KillTimer(1);
-		upgrading = true;
+		
+		
 		if (!ambootloader)  // make sure we're not connected to the bootloader
 		{
 			// Enter "upload firmware" mode of the App
@@ -992,13 +999,14 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 					//sprintf_s(msg, 100, "rs3\r");
 					sprintf_s(msg, 100, "rs3,%i\r", iproc);
 					Send(msg, (int)strlen(msg));
-					Sleep(100);
+					//Sleep(200);
 					nc = 100;
 					while (nc == 100)
 						Recv(msg, &nc);
 					if (nc > 0) {
 						if (msg[nc - 1] == 'K') {
 							SetTimer(4, 100, NULL);
+							upgrading = true;
 							SetDlgItemText(IDC_UPDATE, "Cancel");
 							SetDlgItemText(IDC_GPMTIME, "Updating");
 							pUpdate = (CProgressCtrl*)GetDlgItem(IDC_PROGRESS);
@@ -1012,13 +1020,11 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 						}
 					}
 				}
-				if (n == 3) {
-					upgrading = false;
+				if (upgrading==false) {
 					SetTimer(1, 1000 / pRate->GetPos(), NULL);
 				}
 			}
 		}
-		
 	}
 	else {
 		KillTimer(4);

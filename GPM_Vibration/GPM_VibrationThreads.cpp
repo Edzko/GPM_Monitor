@@ -31,10 +31,10 @@ UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam)
 	while (true)
 	{
 		char buf[10000];
+		char txt[100];
 		int slen = sizeof(sockaddr);
 		if (recvfrom(s, buf, sizeof(buf) - 1, 0, (sockaddr*)&dlg->si_other, &slen) > 0)
 		{
-			char txt[100];
 
 			sprintf_s(txt, 100, "WiFi (%i.%i.%i.%i)\r\n", dlg->si_other.sin_addr.S_un.S_un_b.s_b1,
 				dlg->si_other.sin_addr.S_un.S_un_b.s_b2,
@@ -44,22 +44,39 @@ UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam)
 			// check to see if IP string is already there
 			if (dlg->pCOMList->FindString(0, txt) == CB_ERR) {
 				int iList = dlg->pCOMList->AddString(txt);
+				// add to list of modules
 				dlg->pCOMList->SetItemData(iList, 100);
+				TRACE1("Discovered and added IP %s\r\n",txt);
 				found = true;
+				for (int i = 0; i < 10; i++) 
+					if (strcmp(dlg->vm[i].ip, txt) == 0) 
+						found = false;
+				if (found) {
+					int i;
+					for (i = 0; i < 10; i++) {
+						if (strlen(dlg->vm[i].ip) == 0) {
+							strcpy_s(dlg->vm[i].ip, 100, txt);
+							break;
+						}
+					}
+					if (dlg->pCOMList->GetCount() == 1) {
+						dlg->cim = i; // set as current 
+						dlg->pCOMList->SetCurSel(0);
+					}
+					CString portname = AfxGetApp()->GetProfileString("", "Port", "");
+					if (dlg->pCOMList->SelectString(0, portname) >= 0) {
+						for (i = 0; i < 10; i++) {
+							if (strcmp(dlg->vm[i].ip, portname) == 0) {
+								dlg->cim = i; // set as current 
+								break;
+							}
+						}
+					}
+				}
 			}
 		}
+		found = false;
 		Sleep(100);
-
-		if (found) {
-			CString portname = AfxGetApp()->GetProfileString("", "Port", "");
-			dlg->pCOMList->SelectString(0, portname);
-
-			//CButton* pButton = (CButton*)dlg->GetDlgItem(IDC_CONNECT);
-			// automatically connect to the module
-			//dlg->PostMessage(WM_COMMAND, MAKEWPARAM(IDC_CONNECT, BN_CLICKED), (LPARAM)pButton->m_hWnd);
-
-			found = false;
-		}
 	}
 
 	//AfxEndThread(0);

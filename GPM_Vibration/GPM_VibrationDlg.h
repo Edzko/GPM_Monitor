@@ -106,26 +106,27 @@ public:
 	FILE *logFile;
 	char logFilename[1000];
 	CONFIG_DATA cfgdata;
-
+	int iAxis;
 	CComboBox *pCOMList;
 	CSliderCtrl* pRate;
 	CProgressCtrl* pUpdate;
-
+	int cim;  // current im;
 	sockaddr_in si_other;
 	char jwt[1000];
-
+	bool myupdate;
 	unsigned short crc;
 	int iFW, nFW, wFW;
 	FILE *fw;
 	MODULE_T vm[10];
-	void Send(char *msg, int len);
-	void Recv(char *msg, int *len);
+	void Send(int im, char *msg, int len);
+	void Recv(int im, char *msg, int *len);
 	void parseSP(int im, char* msg, int len);
 	bool noUpdate;
 	void drawChart(CDC* dc);
 	void Connect(int ivm);
 	void Disconnect(int im);
 	void ProcessPeriodicVM(int ivm);
+	void UpdateGUI(int im);
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
@@ -154,4 +155,5 @@ public:
 	afx_msg void OnCbnSelchangeSamplesize();
 	afx_msg void OnBnClickedKey();
 	afx_msg void OnBnClickedPostnow();
+	afx_msg void OnCbnSelchangeComlist();
 };

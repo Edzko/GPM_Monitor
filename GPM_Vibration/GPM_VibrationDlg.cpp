@@ -99,6 +99,7 @@ BEGIN_MESSAGE_MAP(CGPM_VibrationDlg, CDialog)
 	ON_CBN_SELCHANGE(IDC_SAMPLESIZE, &CGPM_VibrationDlg::OnCbnSelchangeSamplesize)
 	ON_BN_CLICKED(IDC_KEY, &CGPM_VibrationDlg::OnBnClickedKey)
 	ON_BN_CLICKED(IDC_POSTNOW, &CGPM_VibrationDlg::OnBnClickedPostnow)
+	ON_CBN_SELCHANGE(IDC_COMLIST, &CGPM_VibrationDlg::OnCbnSelchangeComlist)
 END_MESSAGE_MAP()
 
 
@@ -140,7 +141,7 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 	{
 		pCOMList->SetCurSel(0);
 	}
-
+	cim = -1;  // invalid 
 	CString project = AfxGetApp()->GetProfileString("", "Project", "");
 	SetDlgItemText(IDC_PROJECT, project);
 	CString device = AfxGetApp()->GetProfileString("", "Device", "");
@@ -154,6 +155,7 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 		vm[i].Connected = 0;
 		vm[i].upgrading = false;
 		vm[i].ambootloader = false;
+		strcpy_s(vm[i].ip, 100, "");
 	}
 	//CComboBox* pVeh = (CComboBox*)GetDlgItem(IDC_VEHSEL);
 	//int selVeh = AfxGetApp()->GetProfileInt("", "vehSelect", 0);
@@ -166,16 +168,17 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 	strcpy_s(jwt, 1000, "");
 
 	pRate = (CSliderCtrl*)GetDlgItem(IDC_RATE);
-	pRate->SetRange(1, 10);
+	pRate->SetRange(1, 4);
 	pRate->SetPos(1);
-
-	
+	iAxis = 0;
+	myupdate = false;
 	fw = NULL;
 	CButton *pFW = (CButton*)GetDlgItem(IDC_UPDATE);
 	pFW->EnableWindow(false);
 
 	theApp.m_pDiscoverThread = AfxBeginThread(&ProcDiscoverThreadFunction, this);
-	
+	SetTimer(1, 500, NULL);
+
 	logFile = NULL;
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
@@ -221,11 +224,17 @@ void CGPM_VibrationDlg::OnPaint()
 	}
 	else
 	{
-		if (vm[im].Connected>0)
-		{
-		//CPaintDC dc(this); // device context for painting
+		int im = pCOMList->GetCurSel();
+		char vmname[100];
+		if (im >= 0) {
+			pCOMList->GetLBText(im, vmname);
+			for (int i = 0; i < 10; i++)
+				if (strcmp(vmname, vm[i].ip) == 0) {
 
-		//drawChart(&dc);
+					CPaintDC dc(this); // device context for painting
+
+					drawChart(&dc);
+				}
 		}
 		CDialog::OnPaint();
 	}
@@ -237,12 +246,33 @@ void CGPM_VibrationDlg::drawChart(CDC* dc)
 	GetClientRect(&rc);
 	POINT p[128];
 	int im = 0;
-
+	HBRUSH hOldBrush, hBkg = CreateSolidBrush(RGB(255, 255, 255));
+	hOldBrush = (HBRUSH)dc->SelectObject(hBkg);
+	dc->Rectangle(149, rc.bottom - 19, 150 + 3 * 128, rc.bottom - 20 - 256);
 	for (int i = 0; i < 128; i++) {
-		p[i].x = 20 + i;
-		p[i].y = rc.bottom - 20 - vm[im].data[i];
+		p[i].x = 150 + 3*i;
+		p[i].y = rc.bottom - 20 - vm[cim].data[i];
 	}
+	HPEN hOldPen, hPen;
+	switch (iAxis) {
+	case 0:
+		hPen = CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
+		break;
+	case 1:
+		hPen = CreatePen(PS_SOLID, 1, RGB(0, 200, 0));
+		break;
+	case 2:
+		hPen = CreatePen(PS_SOLID, 1, RGB(255, 0, 255));
+		break;
+	default:
+		hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+	}
+	hOldPen = (HPEN)dc->SelectObject(hPen);
 	dc->Polyline(p, 128);
+	dc->SelectObject(hOldBrush);
+	dc->SelectObject(hOldPen);
+	DeleteObject(hPen);
+	DeleteObject(hBkg);
 }
 
 // The system calls this function to obtain the cursor to display while the user drags
@@ -252,9 +282,8 @@ HCURSOR CGPM_VibrationDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-void CGPM_VibrationDlg::Send(char *msg, int len)
+void CGPM_VibrationDlg::Send(int im, char *msg, int len)
 {
-	int im = 0;
 	if ((vm[im].Connected==2) && (vm[im].gpmSock))
 	{
 		int nResult = send(vm[im].gpmSock,msg,len,0);
@@ -269,9 +298,8 @@ void CGPM_VibrationDlg::Send(char *msg, int len)
 	
 }
 
-void CGPM_VibrationDlg::Recv(char *msg, int *len)
+void CGPM_VibrationDlg::Recv(int im, char *msg, int *len)
 {
-	int im = 0;
 	if ((vm[im].Connected==2) && (vm[im].gpmSock))
 	{
 		
@@ -291,6 +319,37 @@ void CGPM_VibrationDlg::Recv(char *msg, int *len)
 	else *len = 0;
 }
 
+void CGPM_VibrationDlg::UpdateGUI(int im)
+{
+	char valstr[10];
+	myupdate = true;
+	
+	CComboBox* p = (CComboBox*)GetDlgItem(IDC_SAMPLESIZE);
+	switch (vm[im].cfgdata.vibpnts) {
+	case 2048: p->SetCurSel(0); break;
+	case 1024: p->SetCurSel(1); break;
+	case 512: p->SetCurSel(2); break;
+	}
+	
+	p = (CComboBox*)GetDlgItem(IDC_SCALE);
+	if (vm[im].cfgdata.fftlog) p->SetCurSel(0);
+	else p->SetCurSel(1);
+
+	p = (CComboBox*)GetDlgItem(IDC_DWNSAMPLES);
+	p->SetCurSel((int)(vm[im].cfgdata.fftsamps) - 1);
+	
+	p = (CComboBox*)GetDlgItem(IDC_FFTWNDFCN);
+	p->SetCurSel(vm[im].cfgdata.fftWnd - 1);
+
+	_itoa_s(vm[im].cfgdata.fftfreq, valstr, 10);
+	SetDlgItemText(IDC_FREQ, valstr);
+
+	_itoa_s((int)(1000.0 * vm[im].cfgdata.fftscale), valstr, 10);
+	SetDlgItemText(IDC_GAIN, valstr);
+	
+	myupdate = false;
+}
+
 void CGPM_VibrationDlg::parseSP(int im, char* msg, int len)
 {
 	char valstr[10];
@@ -301,7 +360,8 @@ void CGPM_VibrationDlg::parseSP(int im, char* msg, int len)
 		strncpy_s(valstr,10, &msg[i], 2);
 		sscanf_s(valstr, "%hhX", &c[ic++]);
 	}
-
+	UpdateGUI(im);
+	TRACE0("Received Configurations.");
 	noUpdate = true;
 }
 
@@ -326,7 +386,7 @@ void CGPM_VibrationDlg::Disconnect(int im)
 
 void CGPM_VibrationDlg::Connect(int im)
 {
-	char msg[100];
+	char msg[500];
 	int nResult;
 	sockaddr_in sa;
 	CButton *pFW = (CButton*)GetDlgItem(IDC_UPDATE);
@@ -364,13 +424,14 @@ void CGPM_VibrationDlg::Connect(int im)
 
 	nResult = recv(vm[im].gpmSock,msg,100,0);
 
-	Send("?v\r",3);
-	Sleep(500);
+	Send(im,"?v\r",3);
+	Sleep(100);
 	int nc = 500;
-	Recv(msg,&nc);
+	Recv(im, msg,&nc);
 	TRACE1("Error: %s\r\n",msg);
 	if (nc>0)
 	{
+		msg[nc-1] = 0;
 		strcpy_s(vm[im].version, 100, msg);
 		int start = 0, end = 0;
 		while ((msg[start] <= 13) &&(start<nc-1)) start++;
@@ -379,22 +440,21 @@ void CGPM_VibrationDlg::Connect(int im)
 		msg[end] = 0;
 		SetDlgItemText(IDC_VERSION, &msg[start]);
 
-		Send("sp#\r", 4);
-		Sleep(100);
-		nc = 500;
-		Recv(msg, &nc);
-		if (nc > 0)
-			parseSP(im, msg, nc);
-		SetTimer(1,500,NULL);  
+		TRACE1("Connected. Version:\r\n%s",msg);
+
+		vm[im].cfgdata.version = 0;
+
 		pFW->EnableWindow(true);
 		vm[im].ambootloader = false;
 	}
-	else {
-		shutdown(vm[im].gpmSock, SD_SEND);
-		Sleep(100);
-		closesocket(vm[im].gpmSock);
-		vm[im].Connected = 0;
-	}
+	//else 
+	//{
+	//	shutdown(vm[im].gpmSock, SD_SEND);
+	//	Sleep(100);
+	//	closesocket(vm[im].gpmSock);
+	//	vm[im].Connected = 0;
+	//	TRACE0("Disconnected.");
+	//}
 		
 
 	if ((vm[im].Connected>0) && (logFile==NULL))
@@ -431,7 +491,7 @@ void CGPM_VibrationDlg::Connect(int im)
 void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 {
 	int nResult = 0;
-	char txt[500];
+	char txt[1000];
 	int nc = 1000;
 	int im = 0;
 
@@ -446,22 +506,25 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 
 	if (vm[ivm].cfgdata.version == 0)
 	{
-		Send("sp#\r", 4);
+		Send(ivm, "sp#\r", 4);
 		Sleep(100);
 		nc = 500;
-		Recv(txt, &nc);
+		Recv(ivm, txt, &nc);
 		if (nc > 0)
 			parseSP(ivm, txt, nc);
 		return;
 	}
+	if (iAxis < 3)
+		sprintf_s(txt, 1000, "VI7,%i\r",iAxis);
+	else
+		sprintf_s(txt, 1000, "VI7\r");
+	Send(ivm, txt, strlen(txt));
 
-	sprintf_s(txt, 500, "VI7\r");
-	Send(txt, strlen(txt));
-
-	Recv((char*)vm[im].data[0], &nc);
+	Recv(ivm,(char*)vm[ivm].data, &nc);
 	if (nc > 0)
 	{
-		if (nc >= 256) {
+		if (nc >= 128) {
+			TRACE0("Received data\r\n");
 			Invalidate(false);
 			UpdateWindow();
 		}
@@ -492,7 +555,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 
 	if (nIDEvent==1)
 	{
-		pRate = (CSliderCtrl*)GetDlgItem(IDC_RATE);
+		//pRate = (CSliderCtrl*)GetDlgItem(IDC_RATE);
 		int rate = pRate->GetPos();
 		if (rate>0)
 			SetTimer(1, 1000 / rate, NULL);
@@ -517,7 +580,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 		char rtn[100];
 		int nc = 100;
 		memset(rtn, 0, 100);
-		Recv(rtn, &nc);
+		Recv(cim, rtn, &nc);
 		if ((nc >= 1)||(iFW==0))
 		{
 			wFW = 0;
@@ -533,7 +596,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 					fwdata[3] = 0xFF;
 					fwdata[4] = crc >> 8;
 					fwdata[5] = crc & 0xFF;
-					Send((char*)fwdata, BLK_FWSIZE + 0x10);
+					Send(cim, (char*)fwdata, BLK_FWSIZE + 0x10);
 					Sleep(100);
 					SetTimer(1, 1000, NULL);
 					SetTimer(2, 1000, NULL);
@@ -549,7 +612,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 					fwdata[1] = 0xAA;
 					fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
 					fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
-					Send((char*)fwdata, BLK_FWSIZE+0x10);
+					Send(cim, (char*)fwdata, BLK_FWSIZE+0x10);
 					iFW += BLK_FWSIZE;
 				}
 			}; 
@@ -562,7 +625,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 				fwdata[1] = 0xAA;
 				fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
 				fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
-				Send((char*)fwdata, BLK_FWSIZE+0x10);
+				Send(cim, (char*)fwdata, BLK_FWSIZE+0x10);
 				iFW += BLK_FWSIZE;
 			}; 
 			if (rtn[0] == 'Q') { // exit
@@ -579,7 +642,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 			wFW++;
 			if (wFW > 5)
 			{
-				Send((char*)fwdata, BLK_FWSIZE+0x10); // timeout; send again
+				Send(cim, (char*)fwdata, BLK_FWSIZE+0x10); // timeout; send again
 				wFW = 0;
 			}
 		}
@@ -593,12 +656,11 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 
 void CGPM_VibrationDlg::OnBnClickedReset()
 {
-	int im = 0;
-	if (vm[im].Connected)
+	if (vm[cim].Connected)
 	{
-		Send("rs0\r", 4);
+		Send(cim, "rs0\r", 4);
 		Sleep(100);
-		Disconnect(im);
+		Disconnect(cim);
 	}
 }
 
@@ -610,11 +672,13 @@ void CGPM_VibrationDlg::OnDestroy()
 		fclose(logFile);
 		logFile = NULL;
 	}
-	if ((vm[im].Connected==2) && (vm[im].gpmSock))
-	{
-		shutdown(vm[im].gpmSock,SD_SEND);
-		Sleep(100);
-		closesocket(vm[im].gpmSock);
+	for (im = 0; im < 10; im++) {
+		if ((vm[im].Connected == 2) && (vm[im].gpmSock))
+		{
+			shutdown(vm[im].gpmSock, SD_SEND);
+			Sleep(100);
+			closesocket(vm[im].gpmSock);
+		}
 	}
 
 	CString p;
@@ -640,12 +704,11 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 	char szFile[500];
 	char msg[100];
 	int nc;
-	int im = 0;
 
-	if (!vm[im].Connected)
+	if (!vm[cim].Connected)
 		return;
 
-	if (vm[im].upgrading == false)
+	if (vm[cim].upgrading == false)
 	{
 		OPENFILENAME ofn;
 		ZeroMemory(&ofn, sizeof(ofn));
@@ -667,7 +730,9 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 			return;
 		}
 		memset(fwfile, 255, sizeof(fwfile));
-		errno_t nErr = fopen_s(&fw, ofn.lpstrFile, "rb");
+		if (fopen_s(&fw, ofn.lpstrFile, "rb")) 
+			return;
+
 		nFW = fread(fwfile, 1, sizeof(fwfile), fw);
 		nFW = (nFW / ERASE_BLOCK_SIZE + 1) * ERASE_BLOCK_SIZE;
 		fclose(fw);
@@ -677,8 +742,8 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 		iFW = 0;
 		wFW = 0;
 		KillTimer(1);
-		vm[im].upgrading = true;
-		if (!vm[im].ambootloader)  // make sure we're not connected to the bootloader
+		vm[cim].upgrading = true;
+		if (!vm[cim].ambootloader)  // make sure we're not connected to the bootloader
 		{
 			// Enter "upload firmware" mode of the App
 			int n = 0;
@@ -694,11 +759,11 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 				for (n = 0; n < 10; n++) {
 					//sprintf_s(msg, 100, "rs3\r");
 					sprintf_s(msg, 100, "rs3,%i\r", iproc);
-					Send(msg, (int)strlen(msg));
+					Send(cim, msg, (int)strlen(msg));
 					Sleep(100);
 					nc = 100;
 					while (nc == 100)
-						Recv(msg, &nc);
+						Recv(cim, msg, &nc);
 					if (nc > 0) {
 						if (msg[nc - 1] == 'K') {
 							SetTimer(4, 100, NULL);
@@ -716,7 +781,7 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 					}
 				}
 				if (n == 3) {
-					vm[im].upgrading = false;
+					vm[cim].upgrading = false;
 					SetTimer(1, 1000 / pRate->GetPos(), NULL);
 				}
 			}
@@ -726,7 +791,7 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 	else {
 		KillTimer(4);
 		SetTimer(1, 1000 / pRate->GetPos(), NULL);
-		vm[im].upgrading = false;
+		vm[cim].upgrading = false;
 		Sleep(100);
 		SetDlgItemText(IDC_UPDATE, "Firmware Update");
 		pUpdate->ShowWindow(false);
@@ -759,11 +824,11 @@ void CGPM_VibrationDlg::OnEnChangeFreq()
 	// with the ENM_CHANGE flag ORed into the mask.
 
 	// TODO:  Add your control notification handler code here
-
+	if (myupdate) return;
 	CString msg;
 	GetDlgItemText(IDC_FREQ,msg);
 	msg = "SP81," + msg + "\r";
-	Send(msg.GetBuffer(), msg.GetLength());
+	Send(cim, msg.GetBuffer(), msg.GetLength());
 }
 
 
@@ -773,67 +838,77 @@ void CGPM_VibrationDlg::OnEnChangeGain()
 	// send this notification unless you override the CDialog::OnInitDialog()
 	// function and call CRichEditCtrl().SetEventMask()
 	// with the ENM_CHANGE flag ORed into the mask.
+	if (myupdate) return;
 
 	// TODO:  Add your control notification handler code here
 	CString msg;
 	GetDlgItemText(IDC_FREQ, msg);
 	msg = "SP80," + msg + "\r";
-	Send(msg.GetBuffer(), msg.GetLength());
+	char* cmsg = msg.GetBuffer();
+	Send(cim, cmsg, msg.GetLength());
+	TRACE1("Scale = %s\r\n", msg);
 }
 
 
 void CGPM_VibrationDlg::OnCbnSelchangeAxis()
 {
 	// TODO: Add your control notification handler code here
+	if (myupdate) return;
 	CComboBox* p = (CComboBox*)GetDlgItem(IDC_AXIS);
-	int i = p->GetCurSel();
-	char msg[] = "LD6,6\r";
-	msg[4] += i;
-	Send(msg, 6);
+	iAxis = p->GetCurSel();
+	if (iAxis < 3) {
+		char msg[] = "LD6,6\r";
+		msg[4] += iAxis;
+		Send(cim, msg, 6);
+	}  
 }
 
 
 void CGPM_VibrationDlg::OnCbnSelchangeScale()
 {
 	// TODO: Add your control notification handler code here
+	if (myupdate) return;
 	CComboBox* p = (CComboBox*)GetDlgItem(IDC_SCALE);
 	int i = p->GetCurSel();
-	char msg[] = "SP82,6\r";
+	char msg[] = "SP82,0\r";
 	msg[5] += i;
-	Send(msg, 7);
+	Send(cim, msg, 7);
 }
 
 
 void CGPM_VibrationDlg::OnCbnSelchangeFftwndfcn()
 {
 	// TODO: Add your control notification handler code here
+	if (myupdate) return;
 	CComboBox* p = (CComboBox*)GetDlgItem(IDC_FFTWNDFCN);
 	int i = p->GetCurSel()+1;
 	char msg[10];
 	sprintf_s(msg, 10, "SP83,%i\r", i);
-	Send(msg, strlen(msg));
+	Send(cim, msg, strlen(msg));
 }
 
 
 void CGPM_VibrationDlg::OnCbnSelchangeDwnsamples()
 {
 	// TODO: Add your control notification handler code here
+	if (myupdate) return;
 	CComboBox* p = (CComboBox*)GetDlgItem(IDC_SCALE);
 	int i = p->GetCurSel();
-	if (i == 0) Send("SP85,0\r", 7);
-	else Send("SP85,1\r", 7);
+	if (i == 0) Send(cim, "SP85,0\r", 7);
+	else Send(cim, "SP85,1\r", 7);
 }
 
 
 void CGPM_VibrationDlg::OnCbnSelchangeSamplesize()
 {
 	// TODO: Add your control notification handler code here
+	if (myupdate) return;
 	CComboBox* p = (CComboBox*)GetDlgItem(IDC_SCALE);
 	int i = p->GetCurSel();
 	switch (i) {
-	case 0: Send("SP84,2024\r", 10); break;
-	case 1: Send("SP84,1024\r", 10); break;
-	case 2: Send("SP84,512\r", 9); break;
+	case 0: Send(cim, "SP84,2048\r", 10); break;
+	case 1: Send(cim, "SP84,1024\r", 10); break;
+	case 2: Send(cim, "SP84,512\r", 9); break;
 	}
 }
 
@@ -881,4 +956,18 @@ void CGPM_VibrationDlg::OnBnClickedPostnow()
 	// use --libcurl <code.c> to generate code from curl command
 
 
+}
+
+
+void CGPM_VibrationDlg::OnCbnSelchangeComlist()
+{
+	int im;
+	int i = pCOMList->GetCurSel();
+	if (i >= 0) {
+		char vmname[100];
+		pCOMList->GetLBText(i, vmname);
+		for (im = 0; im < 10; im++)
+			if (strcmp(vm[cim].ip,vmname)==0)
+				UpdateGUI(im);
+	}
 }
