@@ -61,6 +61,8 @@ typedef struct
 	uint8_t fftplotlines;       ///< Plot lines (1) instead of dots(0) in the display
 	float fftscale;             ///< scaling factor for vibration data
 	uint8_t fftfreq;            ///< Set frequency for synthesized data
+	uint8_t fftaxis;            ///< Select axis to process data for (0 = all)
+	uint8_t fftrate;            ///< Sample rate in kHz to capture raw IMU samples
 } CONFIG_DATA;
 
 typedef struct
@@ -105,7 +107,6 @@ public:
 	unsigned int stat;
 	FILE *logFile;
 	char logFilename[1000];
-	CONFIG_DATA cfgdata;
 	int iAxis;
 	CComboBox *pCOMList;
 	CSliderCtrl* pRate;
@@ -156,4 +157,5 @@ public:
 	afx_msg void OnBnClickedKey();
 	afx_msg void OnBnClickedPostnow();
 	afx_msg void OnCbnSelchangeComlist();
+	afx_msg void OnCbnSelchangeSamplefreq();
 };

@@ -504,8 +504,9 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 			Sleep(500);
 			int nc = 500;
 			Recv(msg,&nc);
-			msg[nc] = 0;
-			TRACE1("Error: %s\r\n",msg);
+			if (nc>0) 
+				msg[nc] = 0;
+			
 			if (nc>0)
 			{
 				int start = 0, end = 0;
@@ -999,7 +1000,7 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 					//sprintf_s(msg, 100, "rs3\r");
 					sprintf_s(msg, 100, "rs3,%i\r", iproc);
 					Send(msg, (int)strlen(msg));
-					//Sleep(200);
+					Sleep(100);
 					nc = 100;
 					while (nc == 100)
 						Recv(msg, &nc);

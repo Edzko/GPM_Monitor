@@ -43,6 +43,8 @@
 #define IDC_KEY                         1023
 #define IDC_BUTTON3                     1024
 #define IDC_POSTNOW                     1024
+#define IDC_SAMPLESIZE2                 1025
+#define IDC_SAMPLEFREQ                  1025
 
 // Next default values for new objects
 // 

@@ -100,6 +100,7 @@ BEGIN_MESSAGE_MAP(CGPM_VibrationDlg, CDialog)
 	ON_BN_CLICKED(IDC_KEY, &CGPM_VibrationDlg::OnBnClickedKey)
 	ON_BN_CLICKED(IDC_POSTNOW, &CGPM_VibrationDlg::OnBnClickedPostnow)
 	ON_CBN_SELCHANGE(IDC_COMLIST, &CGPM_VibrationDlg::OnCbnSelchangeComlist)
+	ON_CBN_SELCHANGE(IDC_SAMPLEFREQ, &CGPM_VibrationDlg::OnCbnSelchangeSamplefreq)
 END_MESSAGE_MAP()
 
 
@@ -242,10 +243,16 @@ void CGPM_VibrationDlg::OnPaint()
 
 void CGPM_VibrationDlg::drawChart(CDC* dc)
 {
-	RECT rc;
+	RECT rc, trc;
 	GetClientRect(&rc);
 	POINT p[128];
+	char txt[1000];
 	int im = 0;
+	//dc->SetBkMode(TRANSPARENT);
+	dc->SetTextColor(RGB(0, 0, 0));
+	dc->SetBkColor(GetSysColor(COLOR_BTNFACE));
+	HFONT hFont = CreateFont(15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, "Arial Narrow");
+	dc->SelectObject(hFont);
 	HBRUSH hOldBrush, hBkg = CreateSolidBrush(RGB(255, 255, 255));
 	hOldBrush = (HBRUSH)dc->SelectObject(hBkg);
 	dc->Rectangle(149, rc.bottom - 19, 150 + 3 * 128, rc.bottom - 20 - 256);
@@ -269,10 +276,28 @@ void CGPM_VibrationDlg::drawChart(CDC* dc)
 	}
 	hOldPen = (HPEN)dc->SelectObject(hPen);
 	dc->Polyline(p, 128);
+	trc.bottom = rc.bottom - 19;
+	trc.left = 150+375/2;
+	trc.top = trc.bottom;
+	trc.right = trc.left;
+	sprintf_s(txt, 1000, "Frequency (Hz)");
+	dc->DrawText(txt,strlen(txt), &trc, DT_CENTER | DT_NOCLIP);
+	trc.left = 150;
+	trc.right = trc.left;
+	sprintf_s(txt, 1000, "0");
+	dc->DrawText(txt, strlen(txt), &trc, DT_CENTER | DT_NOCLIP);
+	trc.left = 150 + 375;
+	trc.right = trc.left;
+	float sfreq = (float)vm[im].cfgdata.fftrate * 1000 / vm[im].cfgdata.vibpnts * vm[im].cfgdata.fftsamps * 128;
+	sprintf_s(txt, 1000, "%1.0f", sfreq);
+	dc->DrawText(txt, strlen(txt), &trc, DT_CENTER | DT_NOCLIP);
+
+
 	dc->SelectObject(hOldBrush);
 	dc->SelectObject(hOldPen);
 	DeleteObject(hPen);
 	DeleteObject(hBkg);
+	DeleteObject(hFont);
 }
 
 // The system calls this function to obtain the cursor to display while the user drags
@@ -332,9 +357,8 @@ void CGPM_VibrationDlg::UpdateGUI(int im)
 	}
 	
 	p = (CComboBox*)GetDlgItem(IDC_SCALE);
-	if (vm[im].cfgdata.fftlog) p->SetCurSel(0);
-	else p->SetCurSel(1);
-
+	p->SetCurSel(vm[im].cfgdata.fftlog);
+	
 	p = (CComboBox*)GetDlgItem(IDC_DWNSAMPLES);
 	p->SetCurSel((int)(vm[im].cfgdata.fftsamps) - 1);
 	
@@ -347,8 +371,11 @@ void CGPM_VibrationDlg::UpdateGUI(int im)
 	_itoa_s((int)(1000.0 * vm[im].cfgdata.fftscale), valstr, 10);
 	SetDlgItemText(IDC_GAIN, valstr);
 
-	//p = (CComboBox*)GetDlgItem(IDC_AXIS);
-	//p->SetCurSel(0);
+	p = (CComboBox*)GetDlgItem(IDC_AXIS);
+	p->SetCurSel(vm[im].cfgdata.fftaxis);
+
+	p = (CComboBox*)GetDlgItem(IDC_SAMPLEFREQ);
+	p->SetCurSel(vm[im].cfgdata.fftrate-1);
 	
 	myupdate = false;
 }
@@ -363,7 +390,7 @@ void CGPM_VibrationDlg::parseSP(int im, char* msg, int len)
 		strncpy_s(valstr,10, &msg[i], 2);
 		sscanf_s(valstr, "%hhX", &c[ic++]);
 	}
-	if (cfgdata.version != 2) cfgdata.version = 0;
+	if (vm[im].cfgdata.version != 2) vm[im].cfgdata.version = 0;
 	myupdate = true;
 	UpdateGUI(im);
 	myupdate = false;
@@ -509,7 +536,7 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 {
 	int nResult = 0;
 	char txt[1000];
-	int nc = 1000;
+	int nc;
 	int im = 0;
 
 	if (strlen(vm[ivm].ip) == 0)
@@ -535,20 +562,21 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 		Recv(ivm, txt, &nc);
 		if (nc > 0)
 			parseSP(ivm, txt, nc);
+
+		sprintf_s(txt, 1000, "DM%i\r", 90 + vm[im].cfgdata.fftaxis);
+		Send(ivm, txt, strlen(txt));
 		return;
 	}
 
-
-	if (iAxis < 3)
-		sprintf_s(txt, 1000, "VI7,%i\r",iAxis);
-	else
-		sprintf_s(txt, 1000, "VI7\r");
-	Send(ivm, txt, strlen(txt));
-	Sleep(100);
-	Recv(ivm,(char*)vm[ivm].data, &nc);
-
-	if (nc > 0)
-	{
+	nc = 1000;
+	Recv(ivm, (char*)vm[ivm].data, &nc);
+	if (nc < 0) {
+		sprintf_s(txt, 1000, "DM%i\r", 90 + vm[im].cfgdata.fftaxis);
+		Send(ivm, txt, strlen(txt));
+		return;
+	}
+	else if (nc == 0) {
+	} else {
 		if (nc >= 128) {
 			TRACE0("Received data\r\n");
 			Invalidate(false);
@@ -567,10 +595,6 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 			//	inbuf.rec.wheelspeed[0], inbuf.rec.wheelspeed[1], inbuf.rec.wheelspeed[2], inbuf.rec.wheelspeed[3]);
 		}
 	}
-	else {
-		// disconnect ?
-	}
-
 }
 
 void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
@@ -918,11 +942,13 @@ void CGPM_VibrationDlg::OnCbnSelchangeDwnsamples()
 {
 	// TODO: Add your control notification handler code here
 	if (myupdate) return;
-	CComboBox* p = (CComboBox*)GetDlgItem(IDC_SCALE);
+	CComboBox* p = (CComboBox*)GetDlgItem(IDC_DWNSAMPLES);
 	int i = p->GetCurSel()+1;
 	char msg[10];
 	sprintf_s(msg, 10, "SP85,%i\r", i);
 	Send(cim, msg, strlen(msg));
+	vm[cim].cfgdata.version = 0; // invalidate configdata
+
 }
 
 
@@ -937,6 +963,7 @@ void CGPM_VibrationDlg::OnCbnSelchangeSamplesize()
 	case 1: Send(cim, "SP84,1024\r", 10); break;
 	case 2: Send(cim, "SP84,512\r", 9); break;
 	}
+	vm[cim].cfgdata.version = 0; // invalidate configdata
 }
 
 
@@ -997,4 +1024,19 @@ void CGPM_VibrationDlg::OnCbnSelchangeComlist()
 			if (strcmp(vm[cim].ip,vmname)==0)
 				UpdateGUI(im);
 	}
+}
+
+
+
+
+void CGPM_VibrationDlg::OnCbnSelchangeSamplefreq()
+{
+	// TODO: Add your control notification handler code here
+	if (myupdate) return;
+	CComboBox* p = (CComboBox*)GetDlgItem(IDC_SAMPLEFREQ);
+	int i = p->GetCurSel();
+	char msg[10]; 
+	sprintf_s(msg, 10, "SP87,%i\r", i+1);
+	Send(cim, msg, strlen(msg)); 
+	vm[cim].cfgdata.version = 0; // invalidate configdata
 }
