@@ -101,6 +101,7 @@ BEGIN_MESSAGE_MAP(CGPM_VibrationDlg, CDialog)
 	ON_BN_CLICKED(IDC_POSTNOW, &CGPM_VibrationDlg::OnBnClickedPostnow)
 	ON_CBN_SELCHANGE(IDC_COMLIST, &CGPM_VibrationDlg::OnCbnSelchangeComlist)
 	ON_CBN_SELCHANGE(IDC_SAMPLEFREQ, &CGPM_VibrationDlg::OnCbnSelchangeSamplefreq)
+	ON_BN_CLICKED(IDC_ACTIVE, &CGPM_VibrationDlg::OnBnClickedActive)
 END_MESSAGE_MAP()
 
 
@@ -178,7 +179,7 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 	pFW->EnableWindow(false);
 
 	theApp.m_pDiscoverThread = AfxBeginThread(&ProcDiscoverThreadFunction, this);
-	SetTimer(1, 500, NULL);
+	SetTimer(1, 100, NULL);
 
 	logFile = NULL;
 
@@ -319,6 +320,9 @@ void CGPM_VibrationDlg::Send(int im, char *msg, int len)
 			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,0,nErr,0,errMsg,500,NULL);
 			TRACE1("Error: %s\r\n",errMsg);
 		}
+		else {
+			TRACE1("Sent: %s", msg);
+		}
 	}
 	
 }
@@ -368,8 +372,11 @@ void CGPM_VibrationDlg::UpdateGUI(int im)
 	_itoa_s(vm[im].cfgdata.fftfreq, valstr, 10);
 	SetDlgItemText(IDC_FREQ, valstr);
 
-	_itoa_s((int)(1000.0 * vm[im].cfgdata.fftscale), valstr, 10);
-	SetDlgItemText(IDC_GAIN, valstr);
+	if ((vm[im].cfgdata.fftscale > 0.0) && (vm[im].cfgdata.fftscale < 1.0))
+	{
+		_itoa_s((int)(1000.0 * vm[im].cfgdata.fftscale), valstr, 10);
+		SetDlgItemText(IDC_GAIN, valstr);
+	}
 
 	p = (CComboBox*)GetDlgItem(IDC_AXIS);
 	p->SetCurSel(vm[im].cfgdata.fftaxis);
@@ -563,27 +570,30 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 		if (nc > 0)
 			parseSP(ivm, txt, nc);
 
-		sprintf_s(txt, 1000, "DM%i\r", 90 + vm[im].cfgdata.fftaxis);
-		Send(ivm, txt, strlen(txt));
+		Send(ivm, "DM90\r", 5);
+		timeout = 0;
 		return;
 	}
 
 	nc = 1000;
 	Recv(ivm, (char*)vm[ivm].data, &nc);
 	if (nc < 0) {
-		sprintf_s(txt, 1000, "DM%i\r", 90 + vm[im].cfgdata.fftaxis);
-		Send(ivm, txt, strlen(txt));
+		timeout++;
+		if (timeout > 10) {
+			Send(ivm, "DM90\r", 5);
+			timeout = 0;
+		}
 		return;
 	}
 	else if (nc == 0) {
+		// disconnect
+		TRACE0("Disconnected!\r\n");
 	} else {
 		if (nc >= 128) {
-			TRACE0("Received data\r\n");
+			//TRACE0("Received data\r\n");
 			Invalidate(false);
 			UpdateWindow();
 		}
-		//CButton* pFlag = (CButton*)GetDlgItem(IDC_NTRIP);
-		//if (inbuf.rec.WF_State == 25) pFlag->SetCheck(BST_CHECKED); else pFlag->SetCheck(BST_UNCHECKED);
 
 		if (logFile)
 		{
@@ -607,8 +617,8 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 	{
 		//pRate = (CSliderCtrl*)GetDlgItem(IDC_RATE);
 		int rate = pRate->GetPos();
-		if (rate>0)
-			SetTimer(1, 1000 / rate, NULL);
+		//if (rate>0)
+		//	SetTimer(1, 1000 / rate, NULL);
 
 		for (int ivm = 0; ivm < 10; ivm++)
 			ProcessPeriodicVM(ivm);
@@ -648,7 +658,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 					fwdata[5] = crc & 0xFF;
 					Send(cim, (char*)fwdata, BLK_FWSIZE + 0x10);
 					Sleep(100);
-					SetTimer(1, 1000, NULL);
+					SetTimer(1, 100, NULL);
 					SetTimer(2, 1000, NULL);
 					vm[im].upgrading = false;
 					pUpdate->ShowWindow(false);
@@ -680,7 +690,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 			}; 
 			if (rtn[0] == 'Q') { // exit
 				KillTimer(4);
-				SetTimer(1, 1000, NULL);
+				SetTimer(1, 100, NULL);
 				SetTimer(2, 1000, NULL);
 				vm[im].upgrading = false;
 				SetDlgItemText(IDC_UPDATE, "Firmware Update");
@@ -803,7 +813,8 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 			if (strstr(ofn.lpstrFile, "2048EFH")) iproc = 3;
 			if (iproc == 0) {
 				MessageBox("Firmware not suitable for this module. Make sure that the filename includes the Processor type.", "GPM Update Error", MB_OK | MB_ICONINFORMATION);
-				SetTimer(1, 1000 / pRate->GetPos(), NULL);
+				//SetTimer(1, 1000 / pRate->GetPos(), NULL);
+				SetTimer(1, 100, NULL);
 			}
 			else {
 				for (n = 0; n < 10; n++) {
@@ -832,7 +843,8 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 				}
 				if (n == 3) {
 					vm[cim].upgrading = false;
-					SetTimer(1, 1000 / pRate->GetPos(), NULL);
+					//SetTimer(1, 1000 / pRate->GetPos(), NULL);
+					SetTimer(1, 100, NULL);
 				}
 			}
 		}
@@ -840,7 +852,8 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 	}
 	else {
 		KillTimer(4);
-		SetTimer(1, 1000 / pRate->GetPos(), NULL);
+		//SetTimer(1, 1000 / pRate->GetPos(), NULL);
+		SetTimer(1, 100, NULL);
 		vm[cim].upgrading = false;
 		Sleep(100);
 		SetDlgItemText(IDC_UPDATE, "Firmware Update");
@@ -906,10 +919,10 @@ void CGPM_VibrationDlg::OnCbnSelchangeAxis()
 	if (myupdate) return;
 	CComboBox* p = (CComboBox*)GetDlgItem(IDC_AXIS);
 	iAxis = p->GetCurSel();
-	if (iAxis < 3) {
-		char msg[] = "LD6,6\r";
-		msg[4] += iAxis;
-		Send(cim, msg, 6);
+	if (iAxis <= 3) {
+		char msg[10];
+		sprintf_s(msg,10,"SP88,%i\r",iAxis);
+		Send(cim, msg, strlen(msg));
 	}  
 }
 
@@ -1039,4 +1052,14 @@ void CGPM_VibrationDlg::OnCbnSelchangeSamplefreq()
 	sprintf_s(msg, 10, "SP87,%i\r", i+1);
 	Send(cim, msg, strlen(msg)); 
 	vm[cim].cfgdata.version = 0; // invalidate configdata
+}
+
+
+
+
+void CGPM_VibrationDlg::OnBnClickedActive()
+{
+	CButton *p = (CButton*)GetDlgItem(IDC_ACTIVE);
+	if (p->GetCheck() == BST_CHECKED) SetTimer(1, 100, NULL);
+	else KillTimer(1);
 }

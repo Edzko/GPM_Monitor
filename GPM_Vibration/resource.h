@@ -45,6 +45,8 @@
 #define IDC_POSTNOW                     1024
 #define IDC_SAMPLESIZE2                 1025
 #define IDC_SAMPLEFREQ                  1025
+#define IDC_POST2                       1026
+#define IDC_ACTIVE                      1026
 
 // Next default values for new objects
 // 

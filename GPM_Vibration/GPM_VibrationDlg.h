@@ -119,6 +119,7 @@ public:
 	int iFW, nFW, wFW;
 	FILE *fw;
 	MODULE_T vm[10];
+	int timeout;
 	void Send(int im, char *msg, int len);
 	void Recv(int im, char *msg, int *len);
 	void parseSP(int im, char* msg, int len);
@@ -158,4 +159,5 @@ public:
 	afx_msg void OnBnClickedPostnow();
 	afx_msg void OnCbnSelchangeComlist();
 	afx_msg void OnCbnSelchangeSamplefreq();
+	afx_msg void OnBnClickedActive();
 };
