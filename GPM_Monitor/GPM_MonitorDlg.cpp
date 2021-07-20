@@ -829,6 +829,10 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 		if ((nc >= 1)||(iFW==0))
 		{
 			wFW = 0;
+			if (nc > 1) {
+				int _fw, nfw = sscanf_s(rtn, "K%i", &_fw); 
+				if (nfw > 0) iFW = _fw * BLK_FWSIZE;
+			}
 			//sprintf_s(txt, 100, "Upgrading: pkt=%i/%i",iFW/ BLK_FWSIZE,nFW/ BLK_FWSIZE);
 			//SetDlgItemText(IDC_GPMTIME, txt);
 			pUpdate->SetPos(iFW * 100 / nFW);
@@ -1000,7 +1004,7 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 					//sprintf_s(msg, 100, "rs3\r");
 					sprintf_s(msg, 100, "rs3,%i\r", iproc);
 					Send(msg, (int)strlen(msg));
-					Sleep(100);
+					Sleep(1000);
 					nc = 100;
 					while (nc == 100)
 						Recv(msg, &nc);
@@ -1162,7 +1166,13 @@ void CGPM_MonitorDlg::OnBnClickedHelp()
 
 void CGPM_MonitorDlg::OnBnClickedSetutctime()
 {
-	// Get Time and Date and set UBLOX receiver UTC time
+	char cmd[20];
+	time_t ltime;
+	struct tm today;
+	time(&ltime);
+	_localtime64_s(&today, &ltime);
+	sprintf_s(cmd, 20, "st%i,%i,%i\r", today.tm_hour, today.tm_min, today.tm_sec);
+	Send(cmd, strlen(cmd));
 }
 
 

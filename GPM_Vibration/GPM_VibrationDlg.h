@@ -60,7 +60,7 @@ typedef struct
 	uint8_t fftlog;             ///< Compute fft samples in (1:log) scale (0: linear)
 	uint8_t fftplotlines;       ///< Plot lines (1) instead of dots(0) in the display
 	float fftscale;             ///< scaling factor for vibration data
-	uint8_t fftfreq;            ///< Set frequency for synthesized data
+	uint16_t fftfreq;            ///< Set frequency for synthesized data
 	uint8_t fftaxis;            ///< Select axis to process data for (0 = all)
 	uint8_t fftrate;            ///< Sample rate in kHz to capture raw IMU samples
 } CONFIG_DATA;

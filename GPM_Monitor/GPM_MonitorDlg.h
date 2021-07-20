@@ -93,7 +93,15 @@ typedef struct
 	int16_t ant_zoff;           ///< Antenna offset in vehcile z direction (vehicle left)
 	int16_t dum;
 	float altitude;             ///< GPS altitude
-	uint16_t fftWnd;            ///< FFT Filtering Window function for Vibration data
+	uint16_t vibpnts;           ///< Number of samples to capture per each FFT
+	uint8_t fftWnd;             ///< FFT Filtering Window function for Vibration data
+	uint8_t fftsamps;           ///< Number of samples to combine in the fft (downsampling)
+	uint8_t fftlog;             ///< Compute fft samples in (1:log) scale (0: linear)
+	uint8_t fftplotlines;       ///< Plot lines (1) instead of dots(0) in the display
+	float fftscale;             ///< scaling factor for vibration data
+	uint16_t fftfreq;            ///< Set frequency for synthesized data
+	uint8_t fftaxis;            ///< Select axis to process data for (0 = all)
+	uint8_t fftrate;            ///< Sample rate in kHz to capture raw IMU samples
 } CONFIG_DATA;
 
 

@@ -563,14 +563,21 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 
 	if (vm[ivm].cfgdata.version != 2)
 	{
-		Send(ivm, "sp#\r", 4);
+		Send(ivm, "dm0\r", 4); // Turn periodic update off
 		Sleep(100);
 		nc = 500;
 		Recv(ivm, txt, &nc);
-		if (nc > 0)
-			parseSP(ivm, txt, nc);
 
-		Send(ivm, "DM90\r", 5);
+		Send(ivm, "sp#\r", 4); // Request system settings
+		Sleep(100);		
+		nc = 500;
+		Recv(ivm, txt, &nc);
+		if (nc > 0)
+			parseSP(ivm, txt, nc);  // parse system settings and configuration
+
+		Send(ivm, "SP7,3\r", 6);  // Start Vibration App
+		Sleep(100);
+		Send(ivm, "DM90\r", 5); // Start sending vibration data
 		timeout = 0;
 		return;
 	}
@@ -579,7 +586,7 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 	Recv(ivm, (char*)vm[ivm].data, &nc);
 	if (nc < 0) {
 		timeout++;
-		if (timeout > 10) {
+		if (timeout > 200) {  // if we don't receive data, re-submit request for vibration data
 			Send(ivm, "DM90\r", 5);
 			timeout = 0;
 		}
@@ -590,13 +597,15 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 		TRACE0("Disconnected!\r\n");
 	} else {
 		if (nc >= 128) {
-			//TRACE0("Received data\r\n");
+			// data received -> update GUI
 			Invalidate(false);
 			UpdateWindow();
 		}
 
 		if (logFile)
 		{
+			// First line for a new module should include module identification and settings
+			// 
 			//char timebuf[128];
 			//_strtime_s(timebuf, 128);
 			//fprintf(logFile, "%s,%f,%1.10lf,%1.10lf,%1.2f,%1.3f,%i,%i,%i,%i,%i,%i,%i,%i,%i\r\n", timebuf,

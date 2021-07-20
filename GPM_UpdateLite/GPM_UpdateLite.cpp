@@ -4,10 +4,78 @@
 #include <stdio.h>
 #include <string.h>
 #include <winsock2.h>
+#include <ws2tcpip.h>
 
 #define MAX_FWSIZE (1500)
 #define BLK_FWSIZE (0x200)
 #define ERASE_BLOCK_SIZE (16384UL)  // 0x4000
+
+SOCKET gpmSock;
+HANDLE hCommPort;
+DCB dcbCommPort;
+COMMTIMEOUTS CommTimeouts;
+
+int Connected;
+wchar_t errMsg[500];
+char fwfilename[1000];
+unsigned char fwdata[MAX_FWSIZE];
+unsigned char fwfile[500000];
+
+void Send(char* msg, int len)
+{
+	int fSuccess;
+	if ((Connected == 2) && (gpmSock))
+	{
+		int nResult = send(gpmSock, msg, len, 0);
+		if (nResult == SOCKET_ERROR)
+		{
+			int nErr = WSAGetLastError();
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
+			printf("Error: %ws\r\n", errMsg);
+		}
+	}
+	if ((Connected == 1) && (hCommPort))
+	{
+		DWORD nc;
+		fSuccess = WriteFile(hCommPort, msg, len, &nc, NULL);
+		if (fSuccess == 0) {
+			int nErr = GetLastError();
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
+			printf("Error: %ws\r\n", errMsg);
+		}
+	}
+}
+
+void Recv(char* msg, int* len)
+{
+	if ((Connected == 2) && (gpmSock))
+	{
+
+		int nResult = recv(gpmSock, msg, *len, 0);
+		if (nResult == SOCKET_ERROR)
+		{
+			int nErr = GetLastError();
+			if (nErr != WSAETIMEDOUT) {
+				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
+				printf("Error: %ws\r\n", errMsg);
+			}
+			if (nErr == WSAECONNABORTED) {
+				//OnBnClickedConnect();
+			}
+		}
+		*len = nResult;
+	}
+	else
+
+		if ((Connected == 1) && (hCommPort))
+		{
+			DWORD nc;
+			int nResult = ReadFile(hCommPort, msg, *len, (LPDWORD)&nc, NULL);
+			if (nResult >= 0)
+				*len = nc;
+		}
+		else *len = 0;
+}
 
 int main(int argc, char* argv[])
 {
@@ -16,13 +84,11 @@ int main(int argc, char* argv[])
 	WSADATA wsaData = { 0 };
 	int iResult = 0;
 	sockaddr_in sa;
-	wchar_t errMsg[500];
-	char fwfilename[1000];
-	unsigned char fwdata[MAX_FWSIZE];
-	unsigned char fwfile[500000];
+	char msg[500];
+
 
     if (argc == 1) {
-        printf("Syntax: GPM Update Lite [<ip_address>] <firmware.bin>\r\n");
+        printf("Syntax: \r\n   GPM Update Lite [<ip_address>] <firmware.bin>\r\n   GPM Update Lite <COMxx> <firmware.bin>\r\n");
         return 0;
     }
 
@@ -36,7 +102,7 @@ int main(int argc, char* argv[])
 	if (argc > 2) {
 		strcpy_s(ip, 50, argv[1]);
 		strcpy_s(fwfilename, 1000, argv[2]);
-	} else {      // if only two arguments, then no IP was provided, and we discover
+	} else {      // if only two arguments, then no IP was provided, and we should discover
 		sockaddr_in si_me;
 		sockaddr_in si_other;
 		SOCKET s;
@@ -85,49 +151,79 @@ int main(int argc, char* argv[])
 		strcpy_s(fwfilename, 1000, argv[1]);
     }
 
-	// now connect
-	SOCKET gpmSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	sa.sin_family = AF_INET;
-	sa.sin_addr.s_addr = inet_addr(ip);
-	sa.sin_port = htons(port);
+	if (_strnicmp(argv[1], "COM", 3) == 0) {
+		char CommPort[50];
+		sprintf_s(CommPort, 50, "\\\\.\\%s", argv[1]);
 
-	int nResult = connect(gpmSock, (const sockaddr*)&sa, sizeof(sa));
-	if (nResult == SOCKET_ERROR)
-	{
-		int nErr = WSAGetLastError();
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-		printf("Error: %ws\r\n", errMsg);
-	}
-	int timeout = 100;
-	nResult = setsockopt(gpmSock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
-	if (nResult == SOCKET_ERROR)
-	{
-		int nErr = WSAGetLastError();
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-		printf("Error: %ws\r\n", errMsg);
-	}
-	nResult = recv(gpmSock, ip, 100, 0);  // empty any possible residual buffer
+		hCommPort = CreateFileA(CommPort, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hCommPort == INVALID_HANDLE_VALUE) {
+			DWORD dwError = GetLastError();
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, errMsg, 500, NULL);
+			printf("Error: %ws\r\n", errMsg);
+			return 0;
+		}
+		int fSuccess = GetCommState(hCommPort, &dcbCommPort);
+		if (!fSuccess) return 0;
+		int baudRate = 57600;
+		dcbCommPort.DCBlength = sizeof(DCB);
+		dcbCommPort.BaudRate = baudRate;
+		dcbCommPort.ByteSize = 8;
+		dcbCommPort.Parity = NOPARITY;
+		dcbCommPort.StopBits = ONESTOPBIT;
+		dcbCommPort.fInX = FALSE;
+		dcbCommPort.fOutX = FALSE;
+		dcbCommPort.fOutxCtsFlow = FALSE;
+		dcbCommPort.fOutxDsrFlow = FALSE;
+		dcbCommPort.fDtrControl = DTR_CONTROL_ENABLE;
+		dcbCommPort.fRtsControl = RTS_CONTROL_ENABLE;
+		fSuccess = SetCommState(hCommPort, &dcbCommPort);
+		if (!fSuccess) return 0;
 
-	nResult = send(gpmSock, "?v\r", 3, 0);
-	if (nResult == SOCKET_ERROR)
-	{
-		int nErr = WSAGetLastError();
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-		printf("Error: %ws\r\n", errMsg);
+		// modify COM port settings for polling
+		CommTimeouts.ReadIntervalTimeout = 10;
+		CommTimeouts.ReadTotalTimeoutMultiplier = 0;
+		CommTimeouts.ReadTotalTimeoutConstant = 100;
+		CommTimeouts.WriteTotalTimeoutMultiplier = 1;
+		CommTimeouts.WriteTotalTimeoutConstant = 0;
+		fSuccess = SetCommTimeouts(hCommPort, &CommTimeouts);
+
+		Connected = 1;
 	}
-	Sleep(100);
-	char msg[500];
-	int nc = 500;
-	nc = recv(gpmSock, msg, nc, 0);
-	if (nc == SOCKET_ERROR)
-	{
-		int nErr = GetLastError();
-		if (nErr != WSAETIMEDOUT) {
+	else {
+
+		// now connect
+		SOCKET gpmSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		sa.sin_family = AF_INET;
+		//sa.sin_addr.s_addr = inet_addr(ip);
+		inet_pton(sa.sin_family,ip,&sa.sin_addr.s_addr);
+		sa.sin_port = htons(port);
+
+		int nResult = connect(gpmSock, (const sockaddr*)&sa, sizeof(sa));
+		if (nResult == SOCKET_ERROR)
+		{
+			int nErr = WSAGetLastError();
 			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
 			printf("Error: %ws\r\n", errMsg);
 		}
+		int timeout = 100;
+		nResult = setsockopt(gpmSock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+		if (nResult == SOCKET_ERROR)
+		{
+			int nErr = WSAGetLastError();
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
+			printf("Error: %ws\r\n", errMsg);
+		}
+		Connected = 100;
 	}
+	int nc = 500;
+	Recv(msg, &nc);  // empty any possible residual buffer
+
+	Send((char*)"?v\r", 3);
+	Sleep(100);
 	
+	nc = 500;
+	Recv(msg, &nc);
+		
 	if (nc > 0)
 	{
 		int start = 0, end = 0;
@@ -138,12 +234,14 @@ int main(int argc, char* argv[])
 		printf("GPM version: %s\r\n",&msg[start]);
 	}
 	else {
-		shutdown(gpmSock, SD_SEND);
-		Sleep(100);
-		closesocket(gpmSock);
+		if (Connected == 100) {
+			shutdown(gpmSock, SD_SEND);
+			Sleep(100);
+			closesocket(gpmSock);
 
-		printf("Could not connect.\r\n");
-		WSACleanup();
+			printf("Could not connect.\r\n");
+			WSACleanup();
+		}
 		return 1;
 	}
 
@@ -153,8 +251,13 @@ int main(int argc, char* argv[])
 	FILE* fw;
 	errno_t nErr = fopen_s(&fw, fwfilename, "rb");
 	if (nErr != 0) {
+		if (Connected == 100) {
+			shutdown(gpmSock, SD_SEND);
+			Sleep(100);
+			closesocket(gpmSock); 
+			WSACleanup();
+		}
 		printf("Could not open file.\r\n");
-		WSACleanup();
 		return 1;
 	}
 	int nFW = (int)fread(fwfile, 1, sizeof(fwfile), fw);
@@ -173,40 +276,37 @@ int main(int argc, char* argv[])
 	if (strstr(fwfilename, "1024EFM")) iproc = 2;
 	if (strstr(fwfilename, "2048EFH")) iproc = 3;
 	if (iproc == 0) {
+		if (Connected == 100) {
+			shutdown(gpmSock, SD_SEND);
+			Sleep(100);
+			closesocket(gpmSock);
+			WSACleanup();
+		}
 		printf("Firmware not suitable for this module.\r\nMake sure that the filename includes the Processor type.\r\n");
-		WSACleanup();
 		return 1;
 	}
 	
 	for (n = 0; n < 3; n++) {
 		sprintf_s(msg, 100, "rs3,%i\r", iproc);
-		nResult = send(gpmSock, msg, (int)strlen(msg), 0);
-		if (nResult == SOCKET_ERROR)
-		{
-			int nErr = WSAGetLastError();
-
-			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-			printf("Error: %ws\r\n", errMsg);
-		}
+		Send(msg, (int)strlen(msg));
+		
 		Sleep(100);
 		nc = 100;
 		while (nc == 100) {
-			nc = recv(gpmSock, msg, nc, 0);
-			if (nc == SOCKET_ERROR)
-			{
-				int nErr = GetLastError();
-				if (nErr != WSAETIMEDOUT) {
-					FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-					printf("Error: %ws\r\n", errMsg);
-				}
-			}
+			Recv(msg, &nc);
+			
 		}
 		if (nc > 0) {
 			if (msg[nc - 1] == 'K') 
 				break;
 			if (msg[nc - 1] == 'X') {
 				printf("Firmware not suitable for this module.\r\n");
-				WSACleanup();
+				if (Connected == 100) {
+					shutdown(gpmSock, SD_SEND);
+					Sleep(100);
+					closesocket(gpmSock);
+					WSACleanup();
+				}
 				return 1;
 				break;
 			}
@@ -214,12 +314,22 @@ int main(int argc, char* argv[])
 	}
 	if (n == 3) {
 		printf("No response from device.\r\n");
-		WSACleanup();
+		if (Connected == 100) {
+			shutdown(gpmSock, SD_SEND);
+			Sleep(100);
+			closesocket(gpmSock);
+			WSACleanup();
+		}
 		return 0;
 	}
 	if (msg[nc - 1] != 'K') {   //acknowledge firmware upload
 		printf("Could not enter firmware upload mode\r\n");
-		WSACleanup();
+		if (Connected == 100) {
+			shutdown(gpmSock, SD_SEND);
+			Sleep(100);
+			closesocket(gpmSock);
+			WSACleanup();
+		}
 		return 0;
 	}
 
@@ -228,15 +338,7 @@ int main(int argc, char* argv[])
 		int nc = 100;
 		memset(rtn, 0, 100);
 		Sleep(10);
-		nc = recv(gpmSock, rtn, nc, 0);
-		if (nc == SOCKET_ERROR)
-		{
-			int nErr = GetLastError();
-			if (nErr != WSAETIMEDOUT) {
-				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-				printf("Error: %ws\r\n", errMsg);
-			}
-		}
+		Recv(rtn, &nc);
 		if ((nc >= 1) || (iFW == 0))
 		{
 			wFW = 0;
@@ -249,13 +351,7 @@ int main(int argc, char* argv[])
 					fwdata[3] = 0xFF;
 					fwdata[4] = crc >> 8;
 					fwdata[5] = crc & 0xFF;
-					nResult = send(gpmSock, (char*)fwdata, BLK_FWSIZE + 0x10, 0);
-					if (nResult == SOCKET_ERROR)
-					{
-						int nErr = WSAGetLastError();
-						FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-						printf("Error: %ws\r\n", errMsg);
-					}
+					Send((char*)fwdata, BLK_FWSIZE + 0x10);
 					break; // done
 				}
 				else {
@@ -264,13 +360,7 @@ int main(int argc, char* argv[])
 					fwdata[1] = 0xAA;
 					fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
 					fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
-					nResult = send(gpmSock, (char*)fwdata, BLK_FWSIZE + 0x10, 0);
-					if (nResult == SOCKET_ERROR)
-					{
-						int nErr = WSAGetLastError();
-						FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-						printf("Error: %ws\r\n", errMsg);
-					}
+					Send((char*)fwdata, BLK_FWSIZE + 0x10);
 					iFW += BLK_FWSIZE;
 				}
 			};
@@ -283,13 +373,7 @@ int main(int argc, char* argv[])
 				fwdata[1] = 0xAA;
 				fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
 				fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
-				nResult = send(gpmSock, (char*)fwdata, BLK_FWSIZE + 0x10, 0);
-				if (nResult == SOCKET_ERROR)
-				{
-					int nErr = WSAGetLastError();
-					FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-					printf("Error: %ws\r\n", errMsg);
-				}
+				Send((char*)fwdata, BLK_FWSIZE + 0x10);
 				iFW += BLK_FWSIZE;
 			};
 			if (rtn[0] == 'Q') { // exit
@@ -300,24 +384,20 @@ int main(int argc, char* argv[])
 			wFW++;
 			if (wFW > 10)
 			{
-				nResult = send(gpmSock, (char*)fwdata, BLK_FWSIZE + 0x10, 0);
-				if (nResult == SOCKET_ERROR)
-				{
-					int nErr = WSAGetLastError();
-					FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
-					printf("Error: %ws\r\n", errMsg);
-				}
+				Send((char*)fwdata, BLK_FWSIZE + 0x10);
 				wFW = 0;
 			}
 		}
 	}
 
-	shutdown(gpmSock, SD_SEND);
-	Sleep(100);
-	closesocket(gpmSock);
+	if (Connected == 100) {
+		shutdown(gpmSock, SD_SEND);
+		Sleep(100);
+		closesocket(gpmSock);
+		WSACleanup();
+	}
 
 	printf("Firmware update complete\rn");
-	WSACleanup();
 
 	return 0;
 }
