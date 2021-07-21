@@ -339,6 +339,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 							CloseHandle(hCommPort);
 						}
 						hCommPort = INVALID_HANDLE_VALUE;
+						mexPrintf("Could not connect to %s.\r\n", portname);
 					}
 				}
 			} else {
