@@ -102,6 +102,7 @@ BEGIN_MESSAGE_MAP(CGPM_VibrationDlg, CDialog)
 	ON_CBN_SELCHANGE(IDC_COMLIST, &CGPM_VibrationDlg::OnCbnSelchangeComlist)
 	ON_CBN_SELCHANGE(IDC_SAMPLEFREQ, &CGPM_VibrationDlg::OnCbnSelchangeSamplefreq)
 	ON_BN_CLICKED(IDC_ACTIVE, &CGPM_VibrationDlg::OnBnClickedActive)
+	ON_CBN_EDITCHANGE(IDC_COMLIST, &CGPM_VibrationDlg::OnCbnEditchangeComlist)
 END_MESSAGE_MAP()
 
 
@@ -340,6 +341,7 @@ void CGPM_VibrationDlg::Recv(int im, char *msg, int *len)
 				char errMsg[500];
 				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, nErr, 0, errMsg, 500, NULL);
 				TRACE1("Error: %s\r\n", errMsg);
+				if (nErr == WSAECONNRESET) vm[im].Connected = 0;
 			}
 		}
 		*len = nResult;
@@ -564,21 +566,22 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 	if (vm[ivm].cfgdata.version != 2)
 	{
 		Send(ivm, "dm0\r", 4); // Turn periodic update off
-		Sleep(100);
+		Sleep(200);
 		nc = 500;
 		Recv(ivm, txt, &nc);
 
 		Send(ivm, "sp#\r", 4); // Request system settings
-		Sleep(100);		
+		Sleep(200);		
 		nc = 500;
 		Recv(ivm, txt, &nc);
-		if (nc > 0)
+		if (nc > 0) {
 			parseSP(ivm, txt, nc);  // parse system settings and configuration
 
-		Send(ivm, "SP7,3\r", 6);  // Start Vibration App
-		Sleep(100);
-		Send(ivm, "DM90\r", 5); // Start sending vibration data
-		timeout = 0;
+			Send(ivm, "SP7,3\r", 6);  // Start Vibration App
+			Sleep(100);
+			Send(ivm, "dm90\r", 5); // Start sending vibration data
+			timeout = 0;
+		}
 		return;
 	}
 
@@ -587,7 +590,7 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 	if (nc < 0) {
 		timeout++;
 		if (timeout > 200) {  // if we don't receive data, re-submit request for vibration data
-			Send(ivm, "DM90\r", 5);
+			Send(ivm, "dm90\r", 5);
 			timeout = 0;
 		}
 		return;
@@ -1071,4 +1074,15 @@ void CGPM_VibrationDlg::OnBnClickedActive()
 	CButton *p = (CButton*)GetDlgItem(IDC_ACTIVE);
 	if (p->GetCheck() == BST_CHECKED) SetTimer(1, 100, NULL);
 	else KillTimer(1);
+}
+
+
+void CGPM_VibrationDlg::OnCbnEditchangeComlist()
+{
+	char newip[100];
+	int idot = 0;
+	GetDlgItemText(IDC_COMLIST, newip, 100);
+	for (int i = 0; i < strlen(newip); i++) idot++;
+	if ((idot==4) && (newip[strlen(newip)-1]!='.'))
+		strcpy_s(vm[9].ip, 100, newip);
 }

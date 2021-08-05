@@ -20,6 +20,7 @@
 #define IDD_DIALOG1                     131
 #define IDD_AHRS                        131
 #define IDC_COMLIST                     1000
+#define IDC_MYCOMLIST                   1000
 #define IDC_BAUD                        1001
 #define IDC_CHK1                        1002
 #define IDC_SVRCOMLIST                  1002

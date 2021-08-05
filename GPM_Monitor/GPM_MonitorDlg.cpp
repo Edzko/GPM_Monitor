@@ -435,9 +435,10 @@ void CGPM_MonitorDlg::parseSP(char* msg, int len)
 	pFlag->SetCheck(cfgdata.drFlag);
 }
 
+char msg[100];
 void CGPM_MonitorDlg::OnBnClickedConnect()
 {
-	char CommPort[100], msg[100];
+	char CommPort[100];
 	int fSuccess, nResult;
 	DCB dcbCommPort;
 	CComboBox* pCom = (CComboBox*)GetDlgItem(IDC_COMLIST);
@@ -465,8 +466,9 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 			gpmSock=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 			USHORT port = 2000;
 			int iCom = pCom->GetCurSel();
-			if (iCom == -1)
+			if (iCom == -1) {
 				GetDlgItemText(IDC_COMLIST, msg, 100);
+			} 
 			else {
 				pCom->GetLBText(iCom, CommPort);
 				//pCom->GetDlgItemText(CommPort);
