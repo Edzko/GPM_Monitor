@@ -73,7 +73,10 @@
 #define IDC_JOYB                        1047
 #define IDC_PROGRESS                    1048
 #define IDC_POSITION                    1049
+#define IDC_LOADCONFIG                  1049
 #define IDC_POSITION_FRAME              1050
+#define IDC_BUTTON3                     1050
+#define IDC_SAVECONFIG                  1050
 #define IDC_COMPASS_FRAME               1051
 #define IDC_INS_FRAME                   1052
 

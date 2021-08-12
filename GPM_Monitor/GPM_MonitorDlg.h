@@ -195,4 +195,6 @@ public:
 	afx_msg void OnBnClickedHelp();
 	afx_msg void OnBnClickedSetutctime();
 	afx_msg void OnCbnSelchangeComlist();
+	afx_msg void OnBnClickedLoadconfig();
+	afx_msg void OnBnClickedSaveconfig();
 };

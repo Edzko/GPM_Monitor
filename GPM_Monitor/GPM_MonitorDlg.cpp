@@ -106,6 +106,8 @@ BEGIN_MESSAGE_MAP(CGPM_MonitorDlg, CDialog)
 	ON_BN_CLICKED(ID_HELP, &CGPM_MonitorDlg::OnBnClickedHelp)
 	ON_BN_CLICKED(IDC_SETUTCTIME, &CGPM_MonitorDlg::OnBnClickedSetutctime)
 	ON_CBN_SELCHANGE(IDC_COMLIST, &CGPM_MonitorDlg::OnCbnSelchangeComlist)
+	ON_BN_CLICKED(IDC_LOADCONFIG, &CGPM_MonitorDlg::OnBnClickedLoadconfig)
+	ON_BN_CLICKED(IDC_SAVECONFIG, &CGPM_MonitorDlg::OnBnClickedSaveconfig)
 END_MESSAGE_MAP()
 
 
@@ -1181,4 +1183,75 @@ void CGPM_MonitorDlg::OnBnClickedSetutctime()
 void CGPM_MonitorDlg::OnCbnSelchangeComlist()
 {
 	autoselect = false;
+}
+
+
+void CGPM_MonitorDlg::OnBnClickedLoadconfig()
+{
+	char szFile[500], msg[1000];
+	OPENFILENAME ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = m_hWnd;
+	ofn.lpstrFile = szFile;
+	ofn.lpstrFile[0] = '\0';
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = "Firmware\0*.bin\0All\0*.*\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	if (GetOpenFileName(&ofn) == false)
+	{
+		DWORD nErr = CommDlgExtendedError();
+		return;
+	}
+	memset(fwfile, 255, sizeof(fwfile));
+	errno_t nErr = fopen_s(&fw, ofn.lpstrFile, "rb");
+	if (nErr == 0) {
+		int n = fread(&cfgdata, 1, sizeof(cfgdata), fw);
+		fclose(fw);
+	}
+
+	// now send to the GPS module
+	strcpy_s(msg, 1000, "SP#");
+	for (int i = 0; i < sizeof(cfgdata); i++) {
+		unsigned char* cfgbytes = (unsigned char*)&cfgdata;
+		sprintf_s(&msg[3+2*i], 5, "%02X", cfgbytes[i]);
+	}
+	strcat_s(msg, 1000, "\r");
+	Send(msg, strlen(msg));
+}
+
+
+void CGPM_MonitorDlg::OnBnClickedSaveconfig()
+{
+	char szFile[500];
+	OPENFILENAME ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = m_hWnd;
+	ofn.lpstrFile = szFile;
+	ofn.lpstrFile[0] = '\0';
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = "Firmware\0*.bin\0All\0*.*\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	if (GetSaveFileName(&ofn) == false)
+	{
+		DWORD nErr = CommDlgExtendedError();
+		return;
+	}
+
+	errno_t nErr = fopen_s(&fw, ofn.lpstrFile, "w");
+	if (nErr == 0) {
+		int n = fwrite(&cfgdata, 1, sizeof(cfgdata), fw);
+		fclose(fw);
+	}
 }
