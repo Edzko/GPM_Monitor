@@ -736,7 +736,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 		}
 	
 
-		memset(inbuf.data, 0, sizeof(GPM_T));
+		memset(inbuf.data, 0, 2000);
 		//Send("*GG\r", 3);
 		sprintf_s(txt, 500, "MC4,%i,%i,%i\r", ((int)(jx)-0x7FFF), ((int)(jy)-0x7FFF), jb);
 		Send(txt, strlen(txt)); 
@@ -1196,7 +1196,7 @@ void CGPM_MonitorDlg::OnBnClickedLoadconfig()
 	ofn.lpstrFile = szFile;
 	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "Firmware\0*.bin\0All\0*.*\0";
+	ofn.lpstrFilter = "Configuration\0*.cfg\0All\0*.*\0";
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
@@ -1236,7 +1236,7 @@ void CGPM_MonitorDlg::OnBnClickedSaveconfig()
 	ofn.lpstrFile = szFile;
 	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "Firmware\0*.bin\0All\0*.*\0";
+	ofn.lpstrFilter = "Configuration\0*.cfg\0All\0*.*\0";
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;

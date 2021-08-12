@@ -18,7 +18,7 @@
 typedef union
 {
 	/** Binary access to GPM data record */
-	uint8_t data[100];
+	uint8_t data[2000];
 	/** Structure data record with GPM information */
 	struct {
 		uint64_t time;          ///< Current system time

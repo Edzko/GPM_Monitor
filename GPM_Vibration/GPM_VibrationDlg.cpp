@@ -577,7 +577,7 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 		if (nc > 0) {
 			parseSP(ivm, txt, nc);  // parse system settings and configuration
 
-			Send(ivm, "SP7,3\r", 6);  // Start Vibration App
+			Send(ivm, "sp7,3\r", 6);  // Start Vibration App
 			Sleep(100);
 			Send(ivm, "dm90\r", 5); // Start sending vibration data
 			timeout = 0;
