@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GPM_Monitor", "GPM_Monitor\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GPM_Vibration", "GPM_Vibration\GPM_Vibration.vcxproj", "{F0940A5F-369F-4F6F-A3FA-4095750CB5BC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GPM_CanConsole", "GPM_CanConsole\GPM_CanConsole.vcxproj", "{968DE200-9444-40D3-AAC9-1D920388B621}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{F0940A5F-369F-4F6F-A3FA-4095750CB5BC}.Release|x64.Build.0 = Release|Win32
 		{F0940A5F-369F-4F6F-A3FA-4095750CB5BC}.Release|x86.ActiveCfg = Release|Win32
 		{F0940A5F-369F-4F6F-A3FA-4095750CB5BC}.Release|x86.Build.0 = Release|Win32
+		{968DE200-9444-40D3-AAC9-1D920388B621}.Debug|x64.ActiveCfg = Debug|x64
+		{968DE200-9444-40D3-AAC9-1D920388B621}.Debug|x64.Build.0 = Debug|x64
+		{968DE200-9444-40D3-AAC9-1D920388B621}.Debug|x86.ActiveCfg = Debug|Win32
+		{968DE200-9444-40D3-AAC9-1D920388B621}.Debug|x86.Build.0 = Debug|Win32
+		{968DE200-9444-40D3-AAC9-1D920388B621}.Release|x64.ActiveCfg = Release|x64
+		{968DE200-9444-40D3-AAC9-1D920388B621}.Release|x64.Build.0 = Release|x64
+		{968DE200-9444-40D3-AAC9-1D920388B621}.Release|x86.ActiveCfg = Release|Win32
+		{968DE200-9444-40D3-AAC9-1D920388B621}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

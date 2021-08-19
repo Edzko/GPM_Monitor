@@ -4,8 +4,13 @@
 #include <iostream>
 #include <stdint.h>
 #include <canlib.h>
+#include <conio.h>
 
-#define MAX_CHANNELS 1
+#define MAX_CHANNELS 3
+#define CAN_MSG_CONSOLE 0x7E0
+#define CAN_MSG_FIRMWARE 0x7E1
+#define CAN_MSG_TERMINAL 0x7E2
+
 typedef struct
 {
 	unsigned int ArbIDOrHeader;
@@ -51,11 +56,6 @@ bool InitDriver(void)
 	m_channelData.channelCount = MAX_CHANNELS;
 
 
-	//
-	// Enumerate all installed channels in the system and obtain their names
-	// and hardware types.
-	//
-
 	//initialize CANlib
 	canInitializeLibrary();
 
@@ -74,7 +74,7 @@ bool InitDriver(void)
 			sizeof(DWORD));
 
 		//open CAN channel
-		hnd = canOpenChannel(i, canWANT_VIRTUAL);
+		hnd = canOpenChannel(i, canOPEN_ACCEPT_VIRTUAL);
 		if (hnd < 0) {
 			// error
 			//PRINTF_ERR(("ERROR canOpenChannel() in initDriver() FAILED Err= %d. <line: %d>\n",
@@ -91,7 +91,7 @@ bool InitDriver(void)
 		}
 
 		//set the channels busparameters
-		if (i == 0) stat = canSetBusParams(hnd, BAUD_500K, 0, 0, 0, 0, 0);
+		stat = canSetBusParams(hnd, BAUD_500K, 0, 0, 0, 0, 0);
 
 		if (m_channelData.channel[i].hwType == 48) found = true;
 	}
@@ -107,39 +107,48 @@ int main()
 	unsigned char cdata[10];
 	DWORD time;
 	unsigned int dlc, flags;
+	unsigned int i, loop = 0;
 
 	if (InitDriver() == false) {
 		canUnloadLibrary();
 		exit(-1);
 	}
 
-	for (int i = 0; i < 100; i++) {
-		stMsg.ArbIDOrHeader = 0x123;	// arbritration ID
-		stMsg.Data[0] = i;
-		stMsg.Data[1] = 1;
-		stMsg.Data[2] = 2;
-		stMsg.Data[3] = 3;
-		stMsg.Data[4] = 4;
-		stMsg.Data[5] = 5;
-		stMsg.Data[6] = 6;
-		stMsg.Data[7] = 7;
-		stMsg.NumberBytesData = 8;
+	int stat = canBusOn(m_channelData.channel[0].hnd);
 
-		canWrite(m_DriverConfig->channel[0].hnd,
-			stMsg.ArbIDOrHeader,
-			&stMsg.Data[0],
-			stMsg.NumberBytesData,
-			canMSG_STD);
+	while (true) {
 
-		if (canRead(m_channelData.channel[0].hnd, &id, &cdata[0], &dlc, &flags, &time) == canOK) {
-			// print characters
-			printf("Recv %i: 0x%03X - %02X %02X %02X %02X %02X %02X %02X %02X\r\n",
-				i, id, cdata[0], cdata[1], cdata[2], cdata[3], cdata[4], cdata[5], cdata[6], cdata[7]);
+		if (_kbhit()) {
+			int key = _getch();
+			if (key == 27) break;
+			else {
+				stMsg.ArbIDOrHeader = CAN_MSG_CONSOLE;	// arbritration ID
+				stMsg.Data[0] = key;
+				stMsg.NumberBytesData = 1;
+
+				int rtn = canWrite(m_DriverConfig->channel[0].hnd,
+					stMsg.ArbIDOrHeader,
+					&stMsg.Data[0],
+					stMsg.NumberBytesData,
+					canMSG_STD);
+			}
 		}
 
-		Sleep(100);
+		while (canRead(m_channelData.channel[0].hnd, &id, &cdata[0], &dlc, &flags, &time) == canOK) {
+			if (id == CAN_MSG_TERMINAL) {
+				cdata[dlc] = 0;
+				printf("%s", cdata);
+			}
+		}
+		Sleep(1);
 	}
-
+	
+	for (i = 0; i < m_channelData.channelCount; i++) {
+		canStatus stat;
+		stat = canBusOff(m_channelData.channel[i].hnd);
+		stat = canClose(m_channelData.channel[i].hnd);
+	}
+	
 
 	canUnloadLibrary();
 	exit(0);
