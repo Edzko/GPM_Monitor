@@ -6,7 +6,7 @@ Companion Applications for Magna RTK-GPS UBlox & Vibration module.
 
 ![GUI](https://github.com/Edzko/GPM_Monitor/blob/master/GPM_Monitor/hlp/images/gpmgui.png)
 
-[Help file](GPM_Monitor/hlp/GPM_Monitor.chm)
+[Help file](GPM_Monitor/hlp/GPM_Monitor.chm) 
 
 ## GPM Update Lite
 
