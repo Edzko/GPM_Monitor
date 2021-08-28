@@ -6,6 +6,8 @@ Companion Applications for Magna RTK-GPS UBlox & Vibration module.
 
 ![GUI](https://github.com/Edzko/GPM_Monitor/blob/master/GPM_Monitor/hlp/images/gpmgui.png)
 
+[Help file](GPM_Monitor/hlp/GPM_Monitor.chm)
+
 ## GPM Update Lite
 
 Console-based firmware upgrade utility. Run this utility on the same [Wifi] network as the UBlox module. The utility can discover the module on the network, enter update firmware based on a firmware hex file provided in the command line.
