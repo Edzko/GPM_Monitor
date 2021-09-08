@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 
 
     if (argc == 1) {
-        printf("Syntax: \r\n   GPM Update Lite [<ip_address>] <firmware.bin>\r\n   GPM Update Lite <COMxx> <firmware.bin>\r\n");
+        printf("Syntax: \r\n   GPM_Update_Lite [<ip_address>] <firmware.bin>\r\n   GPM Update Lite <COMxx> <firmware.bin>\r\n");
         return 0;
     }
 

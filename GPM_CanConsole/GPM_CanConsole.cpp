@@ -11,6 +11,12 @@
 #define CAN_MSG_FIRMWARE 0x7E1
 #define CAN_MSG_TERMINAL 0x7E2
 
+#define MAX_FWSIZE (1500)
+#define BLK_FWSIZE (0x200)
+#define ERASE_BLOCK_SIZE (16384UL)  // 0x4000
+
+unsigned char fwfile[500000];
+
 typedef struct
 {
 	unsigned int ArbIDOrHeader;
@@ -100,7 +106,7 @@ bool InitDriver(void)
 
 
 
-int main()
+int main(int argc, char* argv[])
 {
 	stMsg_T stMsg;
 	long id;
@@ -108,13 +114,56 @@ int main()
 	DWORD time;
 	unsigned int dlc, flags;
 	unsigned int i, loop = 0;
+	bool updating = false;
+	bool nextBlock = false;
+	unsigned short crc, fwstat = 0;
+	int rtn, iFW, nFW, wFW;
+	FILE* fw;
+
+	if (argc == 2) if ((strcmp(argv[1],"--help")==0) || (strcmp(argv[1],"/?")==0)) {
+		printf("Syntax: \r\n   GPM_CanConsole [<CAN channel>] [<firmware.bin>]\r\n");
+		return 0;
+	}
 
 	if (InitDriver() == false) {
 		canUnloadLibrary();
 		exit(-1);
 	}
 
+	if (argc > 1) {
+		if (strlen(argv[argc - 1]) > 2) {
+			// update firmware
+			updating = true;
+			memset(fwfile, 255, sizeof(fwfile));
+			errno_t nErr = fopen_s(&fw, argv[argc - 1], "rb");
+			nFW = fread(fwfile, 1, sizeof(fwfile), fw);
+			nFW = (nFW / ERASE_BLOCK_SIZE + 1) * ERASE_BLOCK_SIZE;
+			fclose(fw);
+			crc = 0;
+			for (int i = 0; i < nFW; i++) crc += fwfile[i];
+			fw = NULL;
+			iFW = 0;
+			wFW = 0;
+
+			// Send rs3,0\r
+
+		}
+	}
+
+	
 	int stat = canBusOn(m_channelData.channel[0].hnd);
+
+	if (!updating) {
+		stMsg.ArbIDOrHeader = CAN_MSG_CONSOLE;	// arbritration ID
+		strcpy(stMsg.Data, "?v\r");
+		stMsg.NumberBytesData = strlen(stMsg.Data);
+
+		rtn = canWrite(m_DriverConfig->channel[0].hnd,
+			stMsg.ArbIDOrHeader,
+			&stMsg.Data[0],
+			stMsg.NumberBytesData,
+			canMSG_STD);
+	}
 
 	while (true) {
 
@@ -126,7 +175,7 @@ int main()
 				stMsg.Data[0] = key;
 				stMsg.NumberBytesData = 1;
 
-				int rtn = canWrite(m_DriverConfig->channel[0].hnd,
+				rtn = canWrite(m_DriverConfig->channel[0].hnd,
 					stMsg.ArbIDOrHeader,
 					&stMsg.Data[0],
 					stMsg.NumberBytesData,
@@ -138,6 +187,45 @@ int main()
 			if (id == CAN_MSG_TERMINAL) {
 				cdata[dlc] = 0;
 				printf("%s", cdata);
+			}
+			if (id == CAN_MSG_FIRMWARE) {
+				fwstat = cdata[0];
+				iFW = (cdata[1]*0x100+cdata[2]) * BLK_FWSIZE;
+			}
+		}
+
+		// update firmware
+		if (updating) {
+			if ((fwstat > 0) || (iFW == 0)) {
+				if (iFW >= nFW) {
+					// finished
+					cdata[0] = 0x55;
+					cdata[1] = 0xAA;
+					cdata[2] = 0xFF;
+					cdata[3] = 0xFF;
+					cdata[4] = crc >> 8;
+					cdata[5] = crc & 0xFF;
+					printf("\r\nUpdate complete. CRC=%i\r\n",crc);
+					updating = false;
+				}
+				else {
+					cdata[0] = 0x55;
+					cdata[1] = 0xAA;
+					cdata[2] = (iFW / BLK_FWSIZE) >> 8;
+					cdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
+					iFW += BLK_FWSIZE;
+				}
+				printf("\rFirmware: %i", iFW * BLK_FWSIZE);
+				rtn = canWrite(m_DriverConfig->channel[0].hnd,
+					CAN_MSG_FIRMWARE, &cdata, 8, canMSG_STD);
+				// send 64 messages
+				for (int ifw = 0; ifw < BLK_FWSIZE; ifw += 8) {
+					rtn = canWrite(m_DriverConfig->channel[0].hnd,
+						CAN_MSG_FIRMWARE, &fwfile[iFW * BLK_FWSIZE + ifw], 8, canMSG_STD);
+				}
+			}
+			else {
+				// after timeout, re-transmit firmware packet
 			}
 		}
 		Sleep(1);
