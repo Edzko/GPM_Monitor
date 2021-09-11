@@ -41,33 +41,44 @@ namespace GPM_TokenServer
             }
             eventLog.Source = "TokenServerSvc";
             eventLog.Log = "TokenServerLog";
+
+
+            // https://docs.microsoft.com/en-us/dotnet/api/system.serviceprocess.servicebase.onstart?view=dotnet-plat-ext-5.0
+            // string[] imagePathArgs = Environment.GetCommandLineArgs();
+            // (HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\<service name>)
+            foreach (string a in args)
+                eventLog.WriteEntry("Token Service Argument: " + a, EventLogEntryType.Information, 10);
         }
 
         protected override void OnStart(string[] args)
         {
-            thread = new Thread(new ThreadStart(tokenServerThread));
-            thread.Start();
+            foreach (string a in args)
+                eventLog.WriteEntry("Token Service Argument: " + a, EventLogEntryType.Information,10);
 
             // Set up a timer that triggers every minute.
-            Timer timer = new Timer();
-            timer.Interval = 30*60000; // 30 minutes
+            Timer timer = new Timer
+            {
+                Interval = 30 * 60000 // 30 minutes
+            };
             timer.Elapsed += new ElapsedEventHandler(this.OnTimer);
             timer.Start();
 
-            eventLog.WriteEntry("Token Service Started.", EventLogEntryType.Information);
-
             string output = "";
-            var psi = new ProcessStartInfo();
-            psi.CreateNoWindow = true; //This hides the dos-style black window that the command prompt usually shows
-            psi.FileName = @"C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd";
-            psi.Arguments = "auth activate-service-account curl-publisher@pm-devices.iam.gserviceaccount.com --key-file=\"C:\\Projects\\GPS\\UBlox\\GPM_Monitor\\GPM_Vibration\\pm-devices-20d93a2a3f55.json\"";
-            psi.RedirectStandardOutput = true;
-            psi.UseShellExecute = false;
+            var psi = new ProcessStartInfo
+            {
+                CreateNoWindow = true, //This hides the dos-style black window that the command prompt usually shows
+                FileName = @"C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd",
+                Arguments = "auth activate-service-account curl-publisher@pm-devices.iam.gserviceaccount.com --key-file=\"C:\\Projects\\GPS\\UBlox\\GPM_Monitor\\GPM_Vibration\\pm-devices-20d93a2a3f55.json\"",
+                RedirectStandardOutput = true,
+                UseShellExecute = false
+            };
             try
             {
 
-                var process = new Process();
-                process.StartInfo = psi;
+                var process = new Process
+                {
+                    StartInfo = psi
+                };
                 process.Start();
                 StreamReader reader = process.StandardOutput;
                 output = reader.ReadToEnd();
@@ -78,7 +89,15 @@ namespace GPM_TokenServer
                 Debug.WriteLine(ex.Message);
             }
             eventLog.WriteEntry("Activated Service Account", EventLogEntryType.Information, 2);
-            Debug.WriteLine(output);
+            //Debug.WriteLine(output);
+            
+            thread = new Thread(new ThreadStart(tokenServerThread));
+            thread.Start();
+
+            Thread.Sleep(500);
+            OnTimer(null, null);
+
+            eventLog.WriteEntry("Token Service Started.", EventLogEntryType.Information);
         }
 
         protected override void OnStop()
@@ -94,16 +113,20 @@ namespace GPM_TokenServer
         public void OnTimer(object sender, ElapsedEventArgs args)
         {
             string output = "";
-            var psi = new ProcessStartInfo();
-            psi.CreateNoWindow = true; //This hides the dos-style black window that the command prompt usually shows
-            psi.FileName = @"C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd";
-            psi.Arguments = "auth print-access-token";
-            psi.RedirectStandardOutput = true;
-            psi.UseShellExecute = false;
+            var psi = new ProcessStartInfo
+            {
+                CreateNoWindow = true, //This hides the dos-style black window that the command prompt usually shows
+                FileName = @"C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd",
+                Arguments = "auth print-access-token",
+                RedirectStandardOutput = true,
+                UseShellExecute = false
+            };
             try
             {
-                var process = new Process();
-                process.StartInfo = psi;
+                var process = new Process
+                {
+                    StartInfo = psi
+                };
                 process.Start();
                 StreamReader reader = process.StandardOutput;
                 output = reader.ReadToEnd();
@@ -116,7 +139,7 @@ namespace GPM_TokenServer
             if (output.Length > 10)
             {
                 eventLog.WriteEntry("Acquired new access token: " + output.Substring(0, 10), EventLogEntryType.Information, 2); ;
-                access_token = output;
+                access_token = output.Substring(0,output.Length-2);
             }
         }
 
@@ -146,6 +169,8 @@ namespace GPM_TokenServer
         public Socket workSocket = null;
 
         public EventLog log = null;
+
+        public bool TokenRequest = false;
     }
 
 
@@ -229,9 +254,11 @@ namespace GPM_TokenServer
             Socket handler = listener.EndAccept(ar);
 
             // Create the state object.  
-            StateObject state = new StateObject();
-            state.workSocket = handler;
-            state.log = new System.Diagnostics.EventLog();
+            StateObject state = new StateObject
+            {
+                workSocket = handler,
+                log = new System.Diagnostics.EventLog()
+            };
             if (!System.Diagnostics.EventLog.SourceExists("TokenServerClient"))
             {
                 System.Diagnostics.EventLog.CreateEventSource(
@@ -240,7 +267,7 @@ namespace GPM_TokenServer
             state.log.Source = "TokenServerClient";
             state.log.Log = "TokenServerLog"; handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
                 new AsyncCallback(ReadCallback), state);
-
+            state.TokenRequest = true;
             log.WriteEntry("Client Accepted.", EventLogEntryType.Information,3);
         }
 
@@ -258,6 +285,7 @@ namespace GPM_TokenServer
 
             if (bytesRead > 0)
             {
+                state.sb.Clear();
                 // There  might be more data, so store the data received so far.  
                 state.sb.Append(Encoding.ASCII.GetString(
                     state.buffer, 0, bytesRead));
@@ -265,21 +293,62 @@ namespace GPM_TokenServer
                 // Check for end-of-file tag. If it is not there, read
                 // more data.  
                 content = state.sb.ToString();
-                //if (content.IndexOf("<EOF>") > -1)
-                {
-                    // All the data has been read from the
-                    // client. Display it on the console.  
-                    Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",
+                Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",
                         content.Length, content);
-                    // Echo the data back to the client.  
-                    Send(handler, TokenServer.access_token);
+
+                int iPM = content.IndexOf("PM-");
+                if (iPM >= 0)
+                {
+                    string output = "Failed.";
+                    state.TokenRequest = false;
+                    int icolon = content.IndexOf(":",iPM) + 1;
+                    if (icolon > 0)
+                    {
+                        string message = content.Substring(icolon, content.Length - icolon);
+                        string project = "pm-devices";
+                        string topic = "pm_telemetry";
+                        string msg = "{'messages': [{'data': '" + System.Convert.ToBase64String(Encoding.ASCII.GetBytes(message)) + "'}]}";
+
+                        var psi = new ProcessStartInfo
+                        {
+                            CreateNoWindow = true, //This hides the dos-style black window that the command prompt usually shows
+                            FileName = @"C:\Program Files\Utils\bin\curl.exe",
+                            Arguments = "-H \"content-type: application/json\" -H \"Authorization: Bearer " +
+                            TokenServer.access_token + "\" -X POST --data \"{'messages': [{'data': 'LW4gJ1RoaXMgaXMgYSBtZXNzYWdlIGZyb20gRWR6a28nIA0K'}]}\" " +
+                            "https://pubsub.googleapis.com/v1/projects/" +
+                            project + "/topics/" +
+                            topic + ":publish",
+                            RedirectStandardOutput = true,
+                            UseShellExecute = false
+                        };
+                        try
+                        {
+                            var process = new Process
+                            {
+                                StartInfo = psi
+                            };
+                            process.Start();
+                            StreamReader reader = process.StandardOutput;
+                            output = reader.ReadToEnd();
+                            process.WaitForExit();
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex.Message);
+                        }
+                        if (output.Length > 10)
+                        {
+                            //eventLog.WriteEntry("Acquired new access token: " + output.Substring(0, 10), EventLogEntryType.Information, 2); ;
+                            Debug.WriteLine(output);
+                        }
+                    }
+                    Send(handler, output);
                 }
-                //else
-                //{
-                //    // Not all data received. Get more.  
-                //    handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                //    new AsyncCallback(ReadCallback), state);
-                //}
+                else
+                {
+                    Send(handler, TokenServer.access_token);
+                    state.TokenRequest = true;
+                }
             }
         }
 
