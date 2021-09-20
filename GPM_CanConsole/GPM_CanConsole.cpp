@@ -127,6 +127,7 @@ int main(int argc, char* argv[])
 
 	if (InitDriver() == false) {
 		canUnloadLibrary();
+		printf("No KVaser adaptor found.\r\n");
 		exit(-1);
 	}
 
@@ -153,10 +154,12 @@ int main(int argc, char* argv[])
 	
 	int stat = canBusOn(m_channelData.channel[0].hnd);
 
+	printf("Connected. Press <ESC> to quit.\r\n");
+
 	if (!updating) {
 		stMsg.ArbIDOrHeader = CAN_MSG_CONSOLE;	// arbritration ID
-		strcpy(stMsg.Data, "?v\r");
-		stMsg.NumberBytesData = strlen(stMsg.Data);
+		strcpy_s((char*)&stMsg.Data[0], 8, "?v\r");
+		stMsg.NumberBytesData = (int)strlen((char*)stMsg.Data);
 
 		rtn = canWrite(m_DriverConfig->channel[0].hnd,
 			stMsg.ArbIDOrHeader,
