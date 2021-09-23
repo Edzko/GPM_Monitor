@@ -314,7 +314,7 @@ namespace GPM_TokenServer
                             CreateNoWindow = true, //This hides the dos-style black window that the command prompt usually shows
                             FileName = @"C:\Program Files\Utils\bin\curl.exe",
                             Arguments = "-H \"content-type: application/json\" -H \"Authorization: Bearer " +
-                            TokenServer.access_token + "\" -X POST --data \"{'messages': [{'data': 'LW4gJ1RoaXMgaXMgYSBtZXNzYWdlIGZyb20gRWR6a28nIA0K'}]}\" " +
+                            TokenServer.access_token + "\" -X POST --data \"" + msg + "\" " +
                             "https://pubsub.googleapis.com/v1/projects/" +
                             project + "/topics/" +
                             topic + ":publish",

@@ -12,8 +12,7 @@
 #define CAN_MSG_TERMINAL 0x7E2
 
 #define MAX_FWSIZE (1500)
-#define BLK_FWSIZE (0x200)
-#define ERASE_BLOCK_SIZE (16384UL)  // 0x4000
+#define BLK_FWSIZE (0x100)
 
 unsigned char fwfile[500000];
 
@@ -51,7 +50,7 @@ bool InitDriver(void)
 	bool found = false;
 
 	// Initialize ChannelData.
-	memset(m_channelData.channel, 0, sizeof(m_channelData));
+	memset(m_channelData.channel, 0, MAX_CHANNELS*sizeof(ChannelDataStruct));
 	for (i = 0; i < MAX_CHANNELS; i++) {
 		m_channelData.channel[i].isOnBus = 0;
 		m_channelData.channel[i].driverMode = canDRIVER_NORMAL;
@@ -134,32 +133,33 @@ int main(int argc, char* argv[])
 	if (argc > 1) {
 		if (strlen(argv[argc - 1]) > 2) {
 			// update firmware
-			updating = true;
 			memset(fwfile, 255, sizeof(fwfile));
 			errno_t nErr = fopen_s(&fw, argv[argc - 1], "rb");
-			nFW = fread(fwfile, 1, sizeof(fwfile), fw);
-			nFW = (nFW / ERASE_BLOCK_SIZE + 1) * ERASE_BLOCK_SIZE;
-			fclose(fw);
-			crc = 0;
-			for (int i = 0; i < nFW; i++) crc += fwfile[i];
-			fw = NULL;
-			iFW = 0;
-			wFW = 0;
-
-			// Send rs3,0\r
-
+			if (nErr == 0) {
+				updating = true;
+				nFW = fread(fwfile, 1, sizeof(fwfile), fw);
+				nFW = (nFW / BLK_FWSIZE + 1) * BLK_FWSIZE;
+				fclose(fw);
+				crc = 0;
+				for (int i = 0; i < nFW; i++) crc += fwfile[i];
+				fw = NULL;
+				iFW = 0;
+				wFW = 0;
+			}
 		}
 	}
-
 	
 	int stat = canBusOn(m_channelData.channel[0].hnd);
 
-	printf("Connected. Press <ESC> to quit.\r\n");
+	if (updating)
+		printf("Connected. Press <ESC> to quit. Press F2 to update again.\r\n");
+	else
+		printf("Connected. Press <ESC> to quit.\r\n");
 
 	if (!updating) {
 		stMsg.ArbIDOrHeader = CAN_MSG_CONSOLE;	// arbritration ID
 		strcpy_s((char*)&stMsg.Data[0], 8, "?v\r");
-		stMsg.NumberBytesData = (int)strlen((char*)stMsg.Data);
+		stMsg.NumberBytesData = (char)strlen((char*)stMsg.Data);
 
 		rtn = canWrite(m_DriverConfig->channel[0].hnd,
 			stMsg.ArbIDOrHeader,
@@ -172,7 +172,26 @@ int main(int argc, char* argv[])
 
 		if (_kbhit()) {
 			int key = _getch();
-			if (key == 27) break;
+			if (key == 0) {
+				key = _getch();
+				if (key == 0x3C) { // F2 key
+					
+					memset(fwfile, 255, sizeof(fwfile));
+					errno_t nErr = fopen_s(&fw, argv[argc - 1], "rb");
+					if (nErr == 0) {
+						updating = true;
+						nFW = fread(fwfile, 1, sizeof(fwfile), fw);
+						nFW = (nFW / BLK_FWSIZE + 1) * BLK_FWSIZE;
+						fclose(fw);
+						crc = 0;
+						for (int i = 0; i < nFW; i++) crc += fwfile[i];
+						fw = NULL;
+						iFW = 0;
+						wFW = 0;
+					}
+				}
+			}
+			else if (key == 27) break;
 			else {
 				stMsg.ArbIDOrHeader = CAN_MSG_CONSOLE;	// arbritration ID
 				stMsg.Data[0] = key;
@@ -193,7 +212,13 @@ int main(int argc, char* argv[])
 			}
 			if (id == CAN_MSG_FIRMWARE) {
 				fwstat = cdata[0];
-				iFW = (cdata[1]*0x100+cdata[2]) * BLK_FWSIZE;
+				int newFW = (cdata[1] * 0x10000 + cdata[2] * 0x100 + cdata[3]);
+				if ((newFW == 0) && (iFW > 0)) {
+					printf("Failed.\r\n");
+					updating = false;
+				}
+				else
+					iFW = newFW;
 			}
 		}
 
@@ -216,15 +241,20 @@ int main(int argc, char* argv[])
 					cdata[1] = 0xAA;
 					cdata[2] = (iFW / BLK_FWSIZE) >> 8;
 					cdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
-					iFW += BLK_FWSIZE;
+					printf("\rFirmware: 0x%08X  (%i%%)", iFW, iFW * 100 / nFW);
 				}
-				printf("\rFirmware: %i", iFW * BLK_FWSIZE);
 				rtn = canWrite(m_DriverConfig->channel[0].hnd,
-					CAN_MSG_FIRMWARE, &cdata, 8, canMSG_STD);
-				// send 64 messages
-				for (int ifw = 0; ifw < BLK_FWSIZE; ifw += 8) {
-					rtn = canWrite(m_DriverConfig->channel[0].hnd,
-						CAN_MSG_FIRMWARE, &fwfile[iFW * BLK_FWSIZE + ifw], 8, canMSG_STD);
+					CAN_MSG_FIRMWARE, &cdata, 6, canMSG_STD);
+				Sleep(2);
+				if (updating) {
+					// send 64 messages
+					for (int ifw = 0; ifw < BLK_FWSIZE; ifw += 8) {
+						rtn = canWrite(m_DriverConfig->channel[0].hnd,
+							CAN_MSG_FIRMWARE, &fwfile[iFW + ifw], 8, canMSG_STD);
+						Sleep(1);
+					}
+					if (iFW == 0) iFW = -1;
+					fwstat = 0;
 				}
 			}
 			else {
