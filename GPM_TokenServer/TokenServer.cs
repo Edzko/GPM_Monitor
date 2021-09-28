@@ -268,7 +268,7 @@ namespace GPM_TokenServer
             state.log.Log = "TokenServerLog"; handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
                 new AsyncCallback(ReadCallback), state);
             state.TokenRequest = true;
-            log.WriteEntry("Client Accepted.", EventLogEntryType.Information,3);
+            log.WriteEntry("Client Accepted at "+handler.RemoteEndPoint.ToString(), EventLogEntryType.Information,3);
         }
 
         public static void ReadCallback(IAsyncResult ar)

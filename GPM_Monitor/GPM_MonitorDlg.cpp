@@ -531,6 +531,8 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 				pCom->EnableWindow(false);
 				pFW->EnableWindow(true);
 				ambootloader = false;
+				nc = 500;
+				Recv(msg, &nc);
 			}
 			else {
 				shutdown(gpmSock, SD_SEND);
@@ -893,8 +895,14 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 		}
 		else {
 			wFW++;
-			if (wFW > 5)
+			if (wFW > 10)
 			{
+				memcpy(fwdata + 0x10, &fwfile[iFW], BLK_FWSIZE);
+				fwdata[0] = 0x55;
+				fwdata[1] = 0xAA;
+				fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
+				fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
+				iFW += BLK_FWSIZE; 
 				Send((char*)fwdata, BLK_FWSIZE+0x10); // timeout; send again
 				wFW = 0;
 			}
@@ -996,6 +1004,7 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 			// Enter "upload firmware" mode of the App
 			int n = 0;
 			int iproc = 0;
+			/*
 			if (strstr(ofn.lpstrFile, "0512EFF")) iproc = 1;
 			if (strstr(ofn.lpstrFile, "1024EFM")) iproc = 2;
 			if (strstr(ofn.lpstrFile, "2048EFH")) iproc = 3;
@@ -1003,7 +1012,9 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 				MessageBox("Firmware not suitable for this module. Make sure that the filename includes the Processor type.", "GPM Update Error", MB_OK | MB_ICONINFORMATION);
 				SetTimer(1, 1000 / pRate->GetPos(), NULL);
 			}
-			else {
+			else 
+			*/
+			{
 				for (n = 0; n < 10; n++) {
 					//sprintf_s(msg, 100, "rs3\r");
 					sprintf_s(msg, 100, "rs3,%i\r", iproc);
@@ -1014,7 +1025,7 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 						Recv(msg, &nc);
 					if (nc > 0) {
 						if (msg[nc - 1] == 'K') {
-							SetTimer(4, 100, NULL);
+							SetTimer(4, 50, NULL);
 							upgrading = true;
 							SetDlgItemText(IDC_UPDATE, "Cancel");
 							SetDlgItemText(IDC_GPMTIME, "Updating");
