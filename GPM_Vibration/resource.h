@@ -47,6 +47,8 @@
 #define IDC_SAMPLEFREQ                  1025
 #define IDC_POST2                       1026
 #define IDC_ACTIVE                      1026
+#define ID_HELP2                        57671
+#define ID_SETTIME                      57671
 
 // Next default values for new objects
 // 

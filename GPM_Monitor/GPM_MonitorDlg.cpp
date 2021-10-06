@@ -1188,6 +1188,9 @@ void CGPM_MonitorDlg::OnBnClickedSetutctime()
 	_localtime64_s(&today, &ltime);
 	sprintf_s(cmd, 20, "st%i,%i,%i\r", today.tm_hour, today.tm_min, today.tm_sec);
 	Send(cmd, strlen(cmd));
+	Sleep(100);
+	sprintf_s(cmd, 20, "st%i,%i,%i\r", today.tm_year + 1900, today.tm_mon, today.tm_mday);
+	Send(cmd, strlen(cmd));
 }
 
 

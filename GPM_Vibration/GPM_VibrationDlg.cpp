@@ -103,6 +103,7 @@ BEGIN_MESSAGE_MAP(CGPM_VibrationDlg, CDialog)
 	ON_CBN_SELCHANGE(IDC_SAMPLEFREQ, &CGPM_VibrationDlg::OnCbnSelchangeSamplefreq)
 	ON_BN_CLICKED(IDC_ACTIVE, &CGPM_VibrationDlg::OnBnClickedActive)
 	ON_CBN_EDITCHANGE(IDC_COMLIST, &CGPM_VibrationDlg::OnCbnEditchangeComlist)
+	ON_BN_CLICKED(ID_SETTIME, &CGPM_VibrationDlg::OnBnClickedSettime)
 END_MESSAGE_MAP()
 
 
@@ -1099,4 +1100,19 @@ void CGPM_VibrationDlg::OnCbnEditchangeComlist()
 		strcpy_s(vm[9].version, 100, "");
 		vm[9].Connected = -20;  // wait 2 seconds before connecting
 	}
+}
+
+
+void CGPM_VibrationDlg::OnBnClickedSettime()
+{
+	char cmd[20];
+	time_t ltime;
+	struct tm today;
+	time(&ltime);
+	_localtime64_s(&today, &ltime);
+	sprintf_s(cmd, 20, "st%i,%i,%i\r", today.tm_hour, today.tm_min, today.tm_sec);
+	Send(cim, cmd, strlen(cmd));
+	Sleep(100);
+	sprintf_s(cmd, 20, "st%i,%i,%i\r", today.tm_year+1900, today.tm_mon, today.tm_mday);
+	Send(cim, cmd, strlen(cmd));
 }

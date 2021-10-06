@@ -1,6 +1,8 @@
  
 // Commands (ID_* and IDM_*) 
 #define HIDM_ABOUTBOX                           0x10010
+#define HID_HELP2                               0x1E147
+#define HID_SETTIME                             0x1E147
  
 // Prompts (IDP_*) 
 #define HIDP_SOCKETS_INIT_FAILED                0x30067

@@ -161,4 +161,5 @@ public:
 	afx_msg void OnCbnSelchangeSamplefreq();
 	afx_msg void OnBnClickedActive();
 	afx_msg void OnCbnEditchangeComlist();
+	afx_msg void OnBnClickedSettime();
 };
