@@ -90,7 +90,7 @@ typedef struct
 
 // following must match the embedded firmware
 #define MAX_FWSIZE (1500)
-#define BLK_FWSIZE (0x200)
+#define BLK_FWSIZE (0x100)
 #define ERASE_BLOCK_SIZE (16384UL)  // 0x4000
 
 extern unsigned char fwdata[MAX_FWSIZE]; // 1Mb firmware hex file max
@@ -123,7 +123,7 @@ public:
 	void Send(int im, char *msg, int len);
 	void Recv(int im, char *msg, int *len);
 	void parseSP(int im, char* msg, int len);
-	void drawChart(CDC* dc);
+	void drawChart(CDC* dc, int im);
 	void Connect(int ivm);
 	void Disconnect(int im);
 	void ProcessPeriodicVM(int ivm);

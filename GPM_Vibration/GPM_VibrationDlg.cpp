@@ -236,21 +236,20 @@ void CGPM_VibrationDlg::OnPaint()
 
 					CPaintDC dc(this); // device context for painting
 
-					drawChart(&dc);
+					drawChart(&dc,i);
 				}
 		}
 		CDialog::OnPaint();
 	}
 }
 
-void CGPM_VibrationDlg::drawChart(CDC* dc)
+void CGPM_VibrationDlg::drawChart(CDC* dc, int im)
 {
 	RECT rc, trc;
 	GetClientRect(&rc);
 	POINT p[128];
 	char txt[1000];
-	int im = 0;
-	//dc->SetBkMode(TRANSPARENT);
+	
 	dc->SetTextColor(RGB(0, 0, 0));
 	dc->SetBkColor(GetSysColor(COLOR_BTNFACE));
 	HFONT hFont = CreateFont(15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, "Arial Narrow");
@@ -260,7 +259,7 @@ void CGPM_VibrationDlg::drawChart(CDC* dc)
 	dc->Rectangle(149, rc.bottom - 19, 150 + 3 * 128, rc.bottom - 20 - 256);
 	for (int i = 0; i < 128; i++) {
 		p[i].x = 150 + 3*i;
-		p[i].y = rc.bottom - 20 - vm[cim].data[i];
+		p[i].y = rc.bottom - 20 - vm[im].data[i];
 	}
 	HPEN hOldPen, hPen;
 	switch (iAxis) {
@@ -475,6 +474,10 @@ void CGPM_VibrationDlg::Connect(int im)
 	
 	KillTimer(4);
 
+	if (vm[im].Connected < 0) {
+		vm[im].Connected++;
+		return;
+	}
 	
 	vm[im].gpmSock=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	USHORT port = 2000;
@@ -492,6 +495,12 @@ void CGPM_VibrationDlg::Connect(int im)
 		char errMsg[500];
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,0,nErr,0,errMsg,500,NULL);
 		TRACE1("Error: %s\r\n",errMsg);
+		vm[im].Connected = -10000; // timeout 10 seconds before re-attempting to connect
+	}
+	int iLB = pCOMList->GetCurSel();
+	if (iLB == -1) {
+		iLB = pCOMList->AddString(vm[im].ip);
+		pCOMList->SetCurSel(iLB);
 	}
 	vm[im].Connected = 2;
 	vm[im].upgrading = false;
@@ -551,7 +560,7 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 	if (strlen(vm[ivm].ip) == 0)
 		return;
 
-	if (vm[ivm].Connected == 0)
+	if (vm[ivm].Connected <= 0)  // when negaive, then pause before re-attempting to connect
 	{
 		Connect(ivm);
 		return;
@@ -1082,7 +1091,12 @@ void CGPM_VibrationDlg::OnCbnEditchangeComlist()
 	char newip[100];
 	int idot = 0;
 	GetDlgItemText(IDC_COMLIST, newip, 100);
-	for (int i = 0; i < strlen(newip); i++) idot++;
-	if ((idot==4) && (newip[strlen(newip)-1]!='.'))
-		strcpy_s(vm[9].ip, 100, newip);
+	for (int i = 0; i < (int)strlen(newip); i++) if (newip[i]=='.') idot++;
+	if ((idot == 3) && (newip[strlen(newip) - 1] != '.')) {
+		strcpy_s(vm[9].ip, 100, "Cust (");
+		strcat_s(vm[9].ip, 100, newip);
+		strcat_s(vm[9].ip, 100, ")");
+		strcpy_s(vm[9].version, 100, "");
+		vm[9].Connected = -20;  // wait 2 seconds before connecting
+	}
 }
