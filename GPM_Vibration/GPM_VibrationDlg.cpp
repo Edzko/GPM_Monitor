@@ -1113,6 +1113,6 @@ void CGPM_VibrationDlg::OnBnClickedSettime()
 	sprintf_s(cmd, 20, "st%i,%i,%i\r", today.tm_hour, today.tm_min, today.tm_sec);
 	Send(cim, cmd, strlen(cmd));
 	Sleep(100);
-	sprintf_s(cmd, 20, "st%i,%i,%i\r", today.tm_year+1900, today.tm_mon, today.tm_mday);
+	sprintf_s(cmd, 20, "st%i,%i,%i\r", today.tm_year+1900, today.tm_mon+1, today.tm_mday);
 	Send(cim, cmd, strlen(cmd));
 }

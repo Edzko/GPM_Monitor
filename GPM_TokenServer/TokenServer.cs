@@ -296,58 +296,69 @@ namespace GPM_TokenServer
                 Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",
                         content.Length, content);
 
-                int iPM = content.IndexOf("PM-");
-                if (iPM >= 0)
+                if (content.IndexOf("DayTime")>0)
                 {
-                    string output = "Failed.";
-                    state.TokenRequest = false;
-                    int icolon = content.IndexOf(":",iPM) + 1;
-                    if (icolon > 0)
-                    {
-                        string message = content.Substring(icolon, content.Length - icolon);
-                        string project = "pm-devices";
-                        string topic = "pm_telemetry";
-                        string msg = "{'messages': [{'data': '" + System.Convert.ToBase64String(Encoding.ASCII.GetBytes(message)) + "'}]}";
-
-                        var psi = new ProcessStartInfo
-                        {
-                            CreateNoWindow = true, //This hides the dos-style black window that the command prompt usually shows
-                            FileName = @"C:\Program Files\Utils\bin\curl.exe",
-                            Arguments = "-H \"content-type: application/json\" -H \"Authorization: Bearer " +
-                            TokenServer.access_token + "\" -X POST --data \"" + msg + "\" " +
-                            "https://pubsub.googleapis.com/v1/projects/" +
-                            project + "/topics/" +
-                            topic + ":publish",
-                            RedirectStandardOutput = true,
-                            UseShellExecute = false
-                        };
-                        try
-                        {
-                            var process = new Process
-                            {
-                                StartInfo = psi
-                            };
-                            process.Start();
-                            StreamReader reader = process.StandardOutput;
-                            output = reader.ReadToEnd();
-                            process.WaitForExit();
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine(ex.Message);
-                        }
-                        if (output.Length > 10)
-                        {
-                            //eventLog.WriteEntry("Acquired new access token: " + output.Substring(0, 10), EventLogEntryType.Information, 2); ;
-                            Debug.WriteLine(output);
-                        }
-                    }
+                    // 59494 21-10-07 13:44:42 32 0 0 325.2 UTC(NIST) *
+                    string output = "59494 ";
+                    output += DateTime.Now.ToString("yy-MM-dd hh:mm:ss") + " 32 0 0 325.2 UTC(NIST) *";
                     Send(handler, output);
+                    state.TokenRequest = false;
                 }
                 else
                 {
-                    Send(handler, TokenServer.access_token);
-                    state.TokenRequest = true;
+                    int iPM = content.IndexOf("PM-");
+                    if (iPM >= 0)
+                    {
+                        string output = "Failed.";
+                        state.TokenRequest = false;
+                        int icolon = content.IndexOf(":", iPM) + 1;
+                        if (icolon > 0)
+                        {
+                            string message = content.Substring(icolon, content.Length - icolon);
+                            string project = "pm-devices";
+                            string topic = "pm_telemetry";
+                            string msg = "{'messages': [{'data': '" + System.Convert.ToBase64String(Encoding.ASCII.GetBytes(message)) + "'}]}";
+
+                            var psi = new ProcessStartInfo
+                            {
+                                CreateNoWindow = true, //This hides the dos-style black window that the command prompt usually shows
+                                FileName = @"C:\Program Files\Utils\bin\curl.exe",
+                                Arguments = "-H \"content-type: application/json\" -H \"Authorization: Bearer " +
+                                TokenServer.access_token + "\" -X POST --data \"" + msg + "\" " +
+                                "https://pubsub.googleapis.com/v1/projects/" +
+                                project + "/topics/" +
+                                topic + ":publish",
+                                RedirectStandardOutput = true,
+                                UseShellExecute = false
+                            };
+                            try
+                            {
+                                var process = new Process
+                                {
+                                    StartInfo = psi
+                                };
+                                process.Start();
+                                StreamReader reader = process.StandardOutput;
+                                output = reader.ReadToEnd();
+                                process.WaitForExit();
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine(ex.Message);
+                            }
+                            if (output.Length > 10)
+                            {
+                                //eventLog.WriteEntry("Acquired new access token: " + output.Substring(0, 10), EventLogEntryType.Information, 2); ;
+                                Debug.WriteLine(output);
+                            }
+                        }
+                        Send(handler, output);
+                    }
+                    else
+                    {
+                        Send(handler, TokenServer.access_token);
+                        state.TokenRequest = true;
+                    }
                 }
             }
         }
