@@ -22,12 +22,19 @@ using Google.Apis.Pubsub.v1;
 using Google.Apis.Pubsub.v1.Data;
 using System.IO;
 
+using uPLibrary.Networking.M2Mqtt;
+using uPLibrary.Networking.M2Mqtt.Messages;
+
 namespace GPM_TokenServer
 {
     public partial class TokenServer : ServiceBase
     {
         Thread thread;
         public static String access_token = "no valid token received yet.";
+        public static MqttClient client;
+        public static string clientId;
+
+        public static bool useGoogleCloud = false;
 
         public TokenServer(string[] args)
         {
@@ -55,49 +62,74 @@ namespace GPM_TokenServer
             foreach (string a in args)
                 eventLog.WriteEntry("Token Service Argument: " + a, EventLogEntryType.Information,10);
 
-            // Set up a timer that triggers every minute.
-            Timer timer = new Timer
+            if (GPM_TokenServer.TokenServer.useGoogleCloud)
             {
-                Interval = 30 * 60000 // 30 minutes
-            };
-            timer.Elapsed += new ElapsedEventHandler(this.OnTimer);
-            timer.Start();
-
-            string output = "";
-            var psi = new ProcessStartInfo
-            {
-                CreateNoWindow = true, //This hides the dos-style black window that the command prompt usually shows
-                FileName = @"C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd",
-                Arguments = "auth activate-service-account curl-publisher@pm-devices.iam.gserviceaccount.com --key-file=\"C:\\Projects\\GPS\\UBlox\\GPM_Monitor\\GPM_Vibration\\pm-devices-20d93a2a3f55.json\"",
-                RedirectStandardOutput = true,
-                UseShellExecute = false
-            };
-            try
-            {
-
-                var process = new Process
+                // Set up a timer that triggers every minute.
+                Timer timer = new Timer
                 {
-                    StartInfo = psi
+                    Interval = 30 * 60000 // 30 minutes
                 };
-                process.Start();
-                StreamReader reader = process.StandardOutput;
-                output = reader.ReadToEnd();
-                process.WaitForExit();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-            }
-            eventLog.WriteEntry("Activated Service Account", EventLogEntryType.Information, 2);
-            //Debug.WriteLine(output);
-            
-            thread = new Thread(new ThreadStart(tokenServerThread));
-            thread.Start();
+                timer.Elapsed += new ElapsedEventHandler(this.OnTimer);
+                timer.Start();
 
-            Thread.Sleep(500);
-            OnTimer(null, null);
+                string output = "";
+                var psi = new ProcessStartInfo
+                {
+                    CreateNoWindow = true, //This hides the dos-style black window that the command prompt usually shows
+                    FileName = @"C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd",
+                    Arguments = "auth activate-service-account curl-publisher@pm-devices.iam.gserviceaccount.com --key-file=\"C:\\Projects\\GPS\\UBlox\\GPM_Monitor\\GPM_Vibration\\pm-devices-20d93a2a3f55.json\"",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false
+                };
+                try
+                {
+
+                    var process = new Process
+                    {
+                        StartInfo = psi
+                    };
+                    process.Start();
+                    StreamReader reader = process.StandardOutput;
+                    output = reader.ReadToEnd();
+                    process.WaitForExit();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
+                eventLog.WriteEntry("Activated Service Account", EventLogEntryType.Information, 2);
+                //Debug.WriteLine(output);
+
+                thread = new Thread(new ThreadStart(tokenServerThread));
+                thread.Start();
+
+                Thread.Sleep(500);
+                OnTimer(null, null);
+            } else
+            {
+                //string BrokerAddress = "test.mosquitto.org";
+                string BrokerAddress = "localhost";
+
+                client = new MqttClient(BrokerAddress);
+
+                // register a callback-function (we have to implement, see below) which is called by the library when a message was received
+                client.MqttMsgPublishReceived += client_MqttMsgPublishReceived;
+
+                // use a unique id as client id, each time we start the application
+                clientId = Guid.NewGuid().ToString();
+
+                client.Connect(clientId);
+            }
 
             eventLog.WriteEntry("Token Service Started.", EventLogEntryType.Information);
+        }
+
+        // this code runs when a message was received
+        void client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
+        {
+            string ReceivedMessage = Encoding.UTF8.GetString(e.Message);
+
+            
         }
 
         protected override void OnStop()
@@ -170,7 +202,7 @@ namespace GPM_TokenServer
 
         public EventLog log = null;
 
-        public bool TokenRequest = false;
+        //public bool TokenRequest = false;
     }
 
 
@@ -267,7 +299,7 @@ namespace GPM_TokenServer
             state.log.Source = "TokenServerClient";
             state.log.Log = "TokenServerLog"; handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
                 new AsyncCallback(ReadCallback), state);
-            state.TokenRequest = true;
+            //state.TokenRequest = true;
             log.WriteEntry("Client Accepted at "+handler.RemoteEndPoint.ToString(), EventLogEntryType.Information,3);
         }
 
@@ -281,7 +313,18 @@ namespace GPM_TokenServer
             Socket handler = state.workSocket;
 
             // Read data from the client socket.
-            int bytesRead = handler.EndReceive(ar);
+            int bytesRead = 0;
+            try
+            {
+                bytesRead = handler.EndReceive(ar);
+            }
+            catch (SocketException se) {
+                Console.WriteLine("Socket was closed by client");
+                handler.Shutdown(SocketShutdown.Both);
+                handler.Close();
+                state = null;
+                return;
+            }
 
             if (bytesRead > 0)
             {
@@ -296,69 +339,93 @@ namespace GPM_TokenServer
                 Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",
                         content.Length, content);
 
-                if (content.IndexOf("DayTime")>0)
+                if (content.IndexOf("AccessToken") > 0)
                 {
-                    // 59494 21-10-07 13:44:42 32 0 0 325.2 UTC(NIST) *
-                    string output = "59494 ";
-                    output += DateTime.Now.ToString("yy-MM-dd hh:mm:ss") + " 32 0 0 325.2 UTC(NIST) *";
-                    Send(handler, output);
-                    state.TokenRequest = false;
+                    Send(handler, TokenServer.access_token);
+                    //state.TokenRequest = true;
                 }
                 else
                 {
+
                     int iPM = content.IndexOf("PM-");
                     if (iPM >= 0)
                     {
                         string output = "Failed.";
-                        state.TokenRequest = false;
-                        int icolon = content.IndexOf(":", iPM) + 1;
-                        if (icolon > 0)
+                        //state.TokenRequest = false;
+                        if (GPM_TokenServer.TokenServer.useGoogleCloud)
                         {
-                            string message = content.Substring(icolon, content.Length - icolon);
-                            string project = "pm-devices";
-                            string topic = "pm_telemetry";
-                            string msg = "{'messages': [{'data': '" + System.Convert.ToBase64String(Encoding.ASCII.GetBytes(message)) + "'}]}";
+                            int icolon = content.IndexOf(":", iPM) + 1;
+                            if (icolon > 0)
+                            {
+                                string message = content.Substring(icolon, content.Length - icolon);
+                                string project = "pm-devices";
+                                string topic = "pm_telemetry";
+                                string msg = "{'messages': [{'data': '" + System.Convert.ToBase64String(Encoding.ASCII.GetBytes(message)) + "'}]}";
 
-                            var psi = new ProcessStartInfo
-                            {
-                                CreateNoWindow = true, //This hides the dos-style black window that the command prompt usually shows
-                                FileName = @"C:\Program Files\Utils\bin\curl.exe",
-                                Arguments = "-H \"content-type: application/json\" -H \"Authorization: Bearer " +
-                                TokenServer.access_token + "\" -X POST --data \"" + msg + "\" " +
-                                "https://pubsub.googleapis.com/v1/projects/" +
-                                project + "/topics/" +
-                                topic + ":publish",
-                                RedirectStandardOutput = true,
-                                UseShellExecute = false
-                            };
-                            try
-                            {
-                                var process = new Process
+                                var psi = new ProcessStartInfo
                                 {
-                                    StartInfo = psi
+                                    CreateNoWindow = true, //This hides the dos-style black window that the command prompt usually shows
+                                    FileName = @"C:\Program Files\Utils\bin\curl.exe",
+                                    Arguments = "-H \"content-type: application/json\" -H \"Authorization: Bearer " +
+                                    TokenServer.access_token + "\" -X POST --data \"" + msg + "\" " +
+                                    "https://pubsub.googleapis.com/v1/projects/" +
+                                    project + "/topics/" +
+                                    topic + ":publish",
+                                    RedirectStandardOutput = true,
+                                    UseShellExecute = false
                                 };
-                                process.Start();
-                                StreamReader reader = process.StandardOutput;
-                                output = reader.ReadToEnd();
-                                process.WaitForExit();
+                                try
+                                {
+                                    var process = new Process
+                                    {
+                                        StartInfo = psi
+                                    };
+                                    process.Start();
+                                    StreamReader reader = process.StandardOutput;
+                                    output = reader.ReadToEnd();
+                                    process.WaitForExit();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine(ex.Message);
+                                }
+                                if (output.Length > 10)
+                                {
+                                    //eventLog.WriteEntry("Acquired new access token: " + output.Substring(0, 10), EventLogEntryType.Information, 2); ;
+                                    Debug.WriteLine(output);
+                                }
                             }
-                            catch (Exception ex)
+                        }
+                        else
+                        {
+
+                            int icolon = content.IndexOf(":", iPM) + 1;
+                            if (icolon > 0)
                             {
-                                Debug.WriteLine(ex.Message);
+                                // whole topic
+                                string message = content.Substring(icolon, content.Length - icolon);
+                                string Topic = "/DataAnalysis/Vibration/Acquisition";
+                                string msg = "{'messages': [{'data': '" + System.Convert.ToBase64String(Encoding.ASCII.GetBytes(message)) + "'}]}";
+
+                                // publish a message with QoS 2
+                                int rtn = GPM_TokenServer.TokenServer.client.Publish(Topic, Encoding.UTF8.GetBytes(msg), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, true);
+                                // 
+                                output = "Response: " + rtn.ToString();
                             }
-                            if (output.Length > 10)
-                            {
-                                //eventLog.WriteEntry("Acquired new access token: " + output.Substring(0, 10), EventLogEntryType.Information, 2); ;
-                                Debug.WriteLine(output);
-                            }
+
                         }
                         Send(handler, output);
                     }
                     else
                     {
-                        Send(handler, TokenServer.access_token);
-                        state.TokenRequest = true;
+                        // 59494 21-10-07 13:44:42 32 0 0 325.2 UTC(NIST) *
+                        string output = "59494 ";
+                        output += DateTime.Now.ToString("yy-MM-dd hh:mm:ss") + " 32 0 0 325.2 UTC(NIST) *";
+                        Send(handler, output);
+                        //state.TokenRequest = false; 
+
                     }
+
                 }
             }
         }
@@ -386,7 +453,8 @@ namespace GPM_TokenServer
 
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
-
+                StateObject state = (StateObject)ar.AsyncState;
+                state = null;
             }
             catch (Exception e)
             {
