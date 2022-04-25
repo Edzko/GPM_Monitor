@@ -39,7 +39,7 @@ namespace GPM_TokenServer
             // 
             // serviceInstaller
             // 
-            this.serviceInstaller.Description = "Service to issue access tokens to devices";
+            this.serviceInstaller.Description = "Windows Service to issue access tokens to devices, forward MQTT packets to Google Clous or Mosquitto, and to provide Time service to devices.";
             this.serviceInstaller.DisplayName = "Vibration Token Service";
             this.serviceInstaller.ServiceName = "TokenServer";
             // 

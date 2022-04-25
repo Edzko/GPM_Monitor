@@ -49,6 +49,12 @@ namespace GPM_TokenServer
             eventLog.Source = "TokenServerSvc";
             eventLog.Log = "TokenServerLog";
 
+            if (args.Length > 0)
+            {
+                if (args[0] == "Google") GPM_TokenServer.TokenServer.useGoogleCloud = true;
+            }
+
+            //GPM_TokenServer.TokenServer.useGoogleCloud = true;
 
             // https://docs.microsoft.com/en-us/dotnet/api/system.serviceprocess.servicebase.onstart?view=dotnet-plat-ext-5.0
             // string[] imagePathArgs = Environment.GetCommandLineArgs();
@@ -119,9 +125,17 @@ namespace GPM_TokenServer
                 clientId = Guid.NewGuid().ToString();
 
                 client.Connect(clientId);
+
+                eventLog.WriteEntry("Connected to Mosquitto", EventLogEntryType.Information, 2);
+
+                thread = new Thread(new ThreadStart(tokenServerThread));
+                thread.Start();
+
+                Thread.Sleep(500);
+                
             }
 
-            eventLog.WriteEntry("Token Service Started.", EventLogEntryType.Information);
+            eventLog.WriteEntry("Token Service Started. "+ GPM_TokenServer.TokenServer.useGoogleCloud.ToString(), EventLogEntryType.Information);
         }
 
         // this code runs when a message was received
@@ -319,7 +333,7 @@ namespace GPM_TokenServer
                 bytesRead = handler.EndReceive(ar);
             }
             catch (SocketException se) {
-                Console.WriteLine("Socket was closed by client");
+                Console.WriteLine("Socket was closed by client: " + se.ToString());
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
                 state = null;
@@ -405,7 +419,8 @@ namespace GPM_TokenServer
                                 // whole topic
                                 string message = content.Substring(icolon, content.Length - icolon);
                                 string Topic = "/DataAnalysis/Vibration/Acquisition";
-                                string msg = "{'messages': [{'data': '" + System.Convert.ToBase64String(Encoding.ASCII.GetBytes(message)) + "'}]}";
+                                //string msg = "{'messages': [{'data': '" + System.Convert.ToBase64String(Encoding.ASCII.GetBytes(message)) + "'}]}";
+                                string msg = "{'messages': [{'data': '" + message + "'}]}";
 
                                 // publish a message with QoS 2
                                 int rtn = GPM_TokenServer.TokenServer.client.Publish(Topic, Encoding.UTF8.GetBytes(msg), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, true);
