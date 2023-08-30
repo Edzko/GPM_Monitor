@@ -7,6 +7,8 @@
 #define IDC_UPDATE                      5
 #define IDC_RESET2                      6
 #define IDC_SVRCONNECT                  6
+#define IDC_UPDATE2                     6
+#define IDC_ADD_IP                      6
 #define IDC_SIMULINKCONNECT             7
 #define IDC_SIMULINKCONNECT2            8
 #define IDC_SETUTCTIME                  8
