@@ -146,11 +146,11 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 		pCOMList->SetCurSel(0);
 	}
 	cim = -1;  // invalid 
-	CString project = AfxGetApp()->GetProfileString("", "Project", "");
+	CString project = AfxGetApp()->GetProfileString("", "Project", "DataAnalysis");
 	SetDlgItemText(IDC_PROJECT, project);
-	CString device = AfxGetApp()->GetProfileString("", "Device", "");
+	CString device = AfxGetApp()->GetProfileString("", "Device", "Vibration");
 	SetDlgItemText(IDC_DEVICE, device);
-	CString topic = AfxGetApp()->GetProfileString("", "Topic", "");
+	CString topic = AfxGetApp()->GetProfileString("", "Topic", "Acquisition");
 	SetDlgItemText(IDC_TOPIC, topic);
 
 	for (int i = 0; i < 10; i++)
@@ -160,6 +160,7 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 		vm[i].upgrading = false;
 		vm[i].ambootloader = false;
 		strcpy_s(vm[i].ip, 100, "");
+		strcpy_s(vm[i].version, 100, "");
 	}
 	//CComboBox* pVeh = (CComboBox*)GetDlgItem(IDC_VEHSEL);
 	//int selVeh = AfxGetApp()->GetProfileInt("", "vehSelect", 0);
@@ -419,6 +420,9 @@ void CGPM_VibrationDlg::Disconnect(int im)
 		strcpy_s(vm[im].ip, 100, "");
 		vm[im].cfgdata.version = 0;
 		strcpy_s(vm[im].version, "");
+		// remove from dropdown list
+		int i = pCOMList->GetCurSel();
+		pCOMList->DeleteString(i);
 	}
 }
 
