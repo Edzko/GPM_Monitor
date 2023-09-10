@@ -24,7 +24,7 @@ unsigned char fwfile[500000];
 void Send(char* msg, int len)
 {
 	int fSuccess;
-	if ((Connected == 2) && (gpmSock))
+	if ((Connected == 100) && (gpmSock))
 	{
 		int nResult = send(gpmSock, msg, len, 0);
 		if (nResult == SOCKET_ERROR)
@@ -48,7 +48,7 @@ void Send(char* msg, int len)
 
 void Recv(char* msg, int* len)
 {
-	if ((Connected == 2) && (gpmSock))
+	if ((Connected == 100) && (gpmSock))
 	{
 
 		int nResult = recv(gpmSock, msg, *len, 0);
@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
 	else {
 
 		// now connect
-		SOCKET gpmSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		gpmSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		sa.sin_family = AF_INET;
 		//sa.sin_addr.s_addr = inet_addr(ip);
 		inet_pton(sa.sin_family,ip,&sa.sin_addr.s_addr);
@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
 	Recv(msg, &nc);  // empty any possible residual buffer
 
 	Send((char*)"?v\r", 3);
-	Sleep(100);
+	Sleep(300);
 	
 	nc = 500;
 	Recv(msg, &nc);
@@ -272,9 +272,11 @@ int main(int argc, char* argv[])
 	// Enter "upload firmware" mode of the App
 	int n = 0;
 	int iproc = 0;
+	/*
 	if (strstr(fwfilename, "0512EFF")) iproc = 1;
 	if (strstr(fwfilename, "1024EFM")) iproc = 2;
 	if (strstr(fwfilename, "2048EFH")) iproc = 3;
+	if (strstr(fwfilename, "2048EFM")) iproc = 4;
 	if (iproc == 0) {
 		if (Connected == 100) {
 			shutdown(gpmSock, SD_SEND);
@@ -285,7 +287,7 @@ int main(int argc, char* argv[])
 		printf("Firmware not suitable for this module.\r\nMake sure that the filename includes the Processor type.\r\n");
 		return 1;
 	}
-	
+	*/
 	for (n = 0; n < 3; n++) {
 		sprintf_s(msg, 100, "rs3,%i\r", iproc);
 		Send(msg, (int)strlen(msg));

@@ -146,11 +146,11 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 		pCOMList->SetCurSel(0);
 	}
 	cim = -1;  // invalid 
-	CString project = AfxGetApp()->GetProfileString("", "Project", "");
+	CString project = AfxGetApp()->GetProfileString("", "Project", "DataAnalysis");
 	SetDlgItemText(IDC_PROJECT, project);
-	CString device = AfxGetApp()->GetProfileString("", "Device", "");
+	CString device = AfxGetApp()->GetProfileString("", "Device", "Vibration");
 	SetDlgItemText(IDC_DEVICE, device);
-	CString topic = AfxGetApp()->GetProfileString("", "Topic", "");
+	CString topic = AfxGetApp()->GetProfileString("", "Topic", "Acquisition");
 	SetDlgItemText(IDC_TOPIC, topic);
 
 	for (int i = 0; i < 10; i++)
@@ -160,6 +160,7 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 		vm[i].upgrading = false;
 		vm[i].ambootloader = false;
 		strcpy_s(vm[i].ip, 100, "");
+		strcpy_s(vm[i].version, 100, "");
 	}
 	//CComboBox* pVeh = (CComboBox*)GetDlgItem(IDC_VEHSEL);
 	//int selVeh = AfxGetApp()->GetProfileInt("", "vehSelect", 0);
@@ -419,6 +420,9 @@ void CGPM_VibrationDlg::Disconnect(int im)
 		strcpy_s(vm[im].ip, 100, "");
 		vm[im].cfgdata.version = 0;
 		strcpy_s(vm[im].version, "");
+		// remove from dropdown list
+		int i = pCOMList->GetCurSel();
+		pCOMList->DeleteString(i);
 	}
 }
 
@@ -830,20 +834,24 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 			// Enter "upload firmware" mode of the App
 			int n = 0;
 			int iproc = 0;
+			/*
 			if (strstr(ofn.lpstrFile, "0512EFF")) iproc = 1;
 			if (strstr(ofn.lpstrFile, "1024EFM")) iproc = 2;
 			if (strstr(ofn.lpstrFile, "2048EFH")) iproc = 3;
+			if (strstr(ofn.lpstrFile, "2048EFM")) iproc = 4;
 			if (iproc == 0) {
 				MessageBox("Firmware not suitable for this module. Make sure that the filename includes the Processor type.", "GPM Update Error", MB_OK | MB_ICONINFORMATION);
 				//SetTimer(1, 1000 / pRate->GetPos(), NULL);
 				SetTimer(1, 100, NULL);
 			}
-			else {
+			else 
+			*/
+			{
 				for (n = 0; n < 10; n++) {
 					//sprintf_s(msg, 100, "rs3\r");
 					sprintf_s(msg, 100, "rs3,%i\r", iproc);
 					Send(cim, msg, (int)strlen(msg));
-					Sleep(100);
+					Sleep(1000);
 					nc = 100;
 					while (nc == 100)
 						Recv(cim, msg, &nc);
@@ -1099,6 +1107,8 @@ void CGPM_VibrationDlg::OnCbnEditchangeComlist()
 		strcat_s(vm[9].ip, 100, ")");
 		strcpy_s(vm[9].version, 100, "");
 		vm[9].Connected = -20;  // wait 2 seconds before connecting
+		vm[9].upgrading = false;
+		cim = 9;
 	}
 }
 

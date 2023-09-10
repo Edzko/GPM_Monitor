@@ -851,6 +851,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 				int _fw, nfw = sscanf_s(rtn, "K%i", &_fw); 
 				if (nfw > 0) iFW = _fw * BLK_FWSIZE;
 			}
+			//TRACE1("Response %c \r\n", rtn[0]);
 			//sprintf_s(txt, 100, "Upgrading: pkt=%i/%i",iFW/ BLK_FWSIZE,nFW/ BLK_FWSIZE);
 			//SetDlgItemText(IDC_GPMTIME, txt);
 			pUpdate->SetPos(iFW * 100 / nFW);
@@ -881,6 +882,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 					fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
 					Send((char*)fwdata, BLK_FWSIZE+0x10);
 					iFW += BLK_FWSIZE;
+					//TRACE1("Upgrade %i \r\n", iFW);
 				}
 			}; 
 			if (rtn[0] == 'R') { // repeat previous packet
@@ -894,6 +896,7 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 				fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
 				Send((char*)fwdata, BLK_FWSIZE+0x10);
 				iFW += BLK_FWSIZE;
+				//TRACE1("Upgrade %i repeat \r\n", iFW);
 			}; 
 			if (rtn[0] == 'Q') { // exit
 				KillTimer(4);
@@ -914,9 +917,10 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 				fwdata[1] = 0xAA;
 				fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
 				fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
-				iFW += BLK_FWSIZE; 
+				//iFW += BLK_FWSIZE; 
 				Send((char*)fwdata, BLK_FWSIZE+0x10); // timeout; send again
 				wFW = 0;
+				//TRACE1("Upgrade %i timeout \r\n", iFW);
 			}
 		}
 	}
@@ -1020,6 +1024,7 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 			if (strstr(ofn.lpstrFile, "0512EFF")) iproc = 1;
 			if (strstr(ofn.lpstrFile, "1024EFM")) iproc = 2;
 			if (strstr(ofn.lpstrFile, "2048EFH")) iproc = 3;
+			if (strstr(ofn.lpstrFile, "2048EFM")) iproc = 4;
 			if (iproc == 0) {
 				MessageBox("Firmware not suitable for this module. Make sure that the filename includes the Processor type.", "GPM Update Error", MB_OK | MB_ICONINFORMATION);
 				SetTimer(1, 1000 / pRate->GetPos(), NULL);
