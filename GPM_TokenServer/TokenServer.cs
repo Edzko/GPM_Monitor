@@ -114,7 +114,7 @@ namespace GPM_TokenServer
             } else
             {
                 //string BrokerAddress = "test.mosquitto.org";
-                string BrokerAddress = "localhost";
+                string BrokerAddress = "192.168.10.120";
 
                 client = new MqttClient(BrokerAddress);
 
@@ -425,7 +425,7 @@ namespace GPM_TokenServer
                                 // publish a message with QoS 2
                                 int rtn = GPM_TokenServer.TokenServer.client.Publish(Topic, Encoding.UTF8.GetBytes(msg), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, true);
                                 // 
-                                output = "Response: " + rtn.ToString();
+                                output = "[MessageIds = " + rtn.ToString() + "]";
                             }
 
                         }
