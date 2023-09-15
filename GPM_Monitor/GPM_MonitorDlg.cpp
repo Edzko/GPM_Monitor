@@ -599,7 +599,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 			if (!fSuccess) return;
 
 			// modify COM port settings for polling
-			CommTimeouts.ReadIntervalTimeout = 10;
+			CommTimeouts.ReadIntervalTimeout = 1;
 			CommTimeouts.ReadTotalTimeoutMultiplier = 0;
 			CommTimeouts.ReadTotalTimeoutConstant = 100;
 			CommTimeouts.WriteTotalTimeoutMultiplier = 1;
@@ -607,6 +607,7 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 			fSuccess = SetCommTimeouts(hCommPort, &CommTimeouts);
 			
 			Connected = 1;
+			wFW = 0;
 			upgrading = false;
 	//		pCom->GetLBText(pCom->GetCurSel(),portName);
 			SetDlgItemText(IDC_CONNECT,"Disconnect");
@@ -740,12 +741,11 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 
 		memset(inbuf.data, 0, 2000);
 		//Send("*GG\r", 3);
-		sprintf_s(txt, 500, "MC4,%i,%i,%i\r", ((int)(jx)-0x7FFF), ((int)(jy)-0x7FFF), jb);
-		Send(txt, strlen(txt)); 
-		
+		nc = 2000;
 		Recv((char*)inbuf.data, &nc);
-		if (nc > 0)
-		{			
+		TRACE1("Bytes = %i\r\n", nc);
+		if (nc >= 104)
+		{
 			int h = (int)(inbuf.rec.time / (1000 * 60 * 60));
 			int m = (int)((inbuf.rec.time - h * 3600000) / 60000);
 			int s = (int)(inbuf.rec.time - h * 3600000 - m * 60000) / 1000;
@@ -807,11 +807,23 @@ void CGPM_MonitorDlg::OnTimer(UINT_PTR nIDEvent)
 				char timebuf[128];
 				_strtime_s(timebuf, 128);
 				fprintf(logFile, "%s,%f,%1.10lf,%1.10lf,%1.2f,%1.3f,%i,%i,%i,%i,%i,%i,%i,%i,%i\r\n", timebuf,
-					0.001*inbuf.rec.time, inbuf.rec.latitude, inbuf.rec.longitude, inbuf.rec.heading,
+					0.001 * inbuf.rec.time, inbuf.rec.latitude, inbuf.rec.longitude, inbuf.rec.heading,
 					inbuf.rec.std, inbuf.rec.posType, inbuf.rec.steer, inbuf.rec.speed, inbuf.rec.brake, inbuf.rec.rpm,
 					inbuf.rec.wheelspeed[0], inbuf.rec.wheelspeed[1], inbuf.rec.wheelspeed[2], inbuf.rec.wheelspeed[3]);
 			}
-		}	
+
+			//sprintf_s(txt, 500, "MC4,%i,%i,%i\r", ((int)(jx)-0x7FFF), ((int)(jy)-0x7FFF), jb);
+			//Send(txt, strlen(txt));
+			//wFW = 0; // reset timeout
+		}
+		//else wFW++;
+
+		//if (wFW > 5) {
+			sprintf_s(txt, 500, "MC4,%i,%i,%i\r", ((int)(jx)-0x7FFF), ((int)(jy)-0x7FFF), jb);
+			Send(txt, strlen(txt));
+			wFW = 0; // reset timeout
+
+		//}
 		//Invalidate(0);
 		//UpdateWindow();		
 	}
