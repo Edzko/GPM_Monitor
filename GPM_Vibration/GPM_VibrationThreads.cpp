@@ -30,13 +30,14 @@ UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam)
 
 	while (true)
 	{
-		char buf[10000];
-		char txt[100];
+		char buf[1000];
+		char txt[1000];
 		int slen = sizeof(sockaddr);
-		if (recvfrom(s, buf, sizeof(buf) - 1, 0, (sockaddr*)&dlg->si_other, &slen) > 0)
+		int n = recvfrom(s, buf, sizeof(buf) - 1, 0, (sockaddr*)&dlg->si_other, &slen);
+		if (n > 0)
 		{
-
-			sprintf_s(txt, 100, "WiFi (%i.%i.%i.%i)\r\n", dlg->si_other.sin_addr.S_un.S_un_b.s_b1,
+			buf[n] = 0;
+			sprintf_s(txt, 100, "%s (%i.%i.%i.%i)\r\n", buf,dlg->si_other.sin_addr.S_un.S_un_b.s_b1,
 				dlg->si_other.sin_addr.S_un.S_un_b.s_b2,
 				dlg->si_other.sin_addr.S_un.S_un_b.s_b3,
 				dlg->si_other.sin_addr.S_un.S_un_b.s_b4);

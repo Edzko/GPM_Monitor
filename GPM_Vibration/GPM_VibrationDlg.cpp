@@ -83,6 +83,7 @@ BEGIN_MESSAGE_MAP(CGPM_VibrationDlg, CDialog)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_NOTIFY_EX(TTN_NEEDTEXT, 0, OnToolTipText)
 	//}}AFX_MSG_MAP
 	ON_WM_TIMER()
 	ON_BN_CLICKED(IDC_RESET, &CGPM_VibrationDlg::OnBnClickedReset)
@@ -104,6 +105,7 @@ BEGIN_MESSAGE_MAP(CGPM_VibrationDlg, CDialog)
 	ON_BN_CLICKED(IDC_ACTIVE, &CGPM_VibrationDlg::OnBnClickedActive)
 	ON_CBN_EDITCHANGE(IDC_COMLIST, &CGPM_VibrationDlg::OnCbnEditchangeComlist)
 	ON_BN_CLICKED(ID_SETTIME, &CGPM_VibrationDlg::OnBnClickedSettime)
+	ON_BN_CLICKED(ID_STARTMQTT, &CGPM_VibrationDlg::OnBnClickedStartmqtt)
 END_MESSAGE_MAP()
 
 
@@ -161,6 +163,7 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 		vm[i].ambootloader = false;
 		strcpy_s(vm[i].ip, 100, "");
 		strcpy_s(vm[i].version, 100, "");
+		memset(vm[i].data, 0, 1000);
 	}
 	//CComboBox* pVeh = (CComboBox*)GetDlgItem(IDC_VEHSEL);
 	//int selVeh = AfxGetApp()->GetProfileInt("", "vehSelect", 0);
@@ -182,11 +185,13 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 	pFW->EnableWindow(false);
 
 	theApp.m_pDiscoverThread = AfxBeginThread(&ProcDiscoverThreadFunction, this);
-	SetTimer(1, 100, NULL);
+	SetTimer(1, T_UPDATE, NULL);
 
 	chkActive = (CButton*)GetDlgItem(IDC_ACTIVE);
 
 	logFile = NULL;
+
+	EnableToolTips(TRUE);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -261,11 +266,52 @@ void CGPM_VibrationDlg::drawChart(CDC* dc, int im)
 	HBRUSH hOldBrush, hBkg = CreateSolidBrush(RGB(255, 255, 255));
 	hOldBrush = (HBRUSH)dc->SelectObject(hBkg);
 	dc->Rectangle(149, rc.bottom - 19, 150 + 3 * 128, rc.bottom - 20 - 256);
+	float sfreq = (float)vm[im].cfgdata.fftrate * 1000 / vm[im].cfgdata.vibpnts * vm[im].cfgdata.fftsamps * 128;
+
+	HPEN hOldPen, hPen;
+	
+	hPen = CreatePen(PS_DASHDOT, 1, RGB(200, 200, 200));
+	hOldPen = (HPEN)dc->SelectObject(hPen);
+	if (sfreq < 200) {
+		for (int i = 10; i < sfreq; i += 10) {
+			p[0].x = 150 + (LONG)(384.0 / sfreq * i);
+			p[0].y = rc.bottom - 19;
+			p[1].x = p[0].x;
+			p[1].y = rc.bottom - 20 - 256;
+			dc->Polyline(p, 2);
+		}
+	}
+	else if (sfreq < 500) {
+		for (int i = 25; i < sfreq; i += 25) {
+			p[0].x = 150 + (LONG)(384.0 / sfreq * i);
+			p[0].y = rc.bottom - 19;
+			p[1].x = p[0].x;
+			p[1].y = rc.bottom - 20 - 256;
+			dc->Polyline(p, 2);
+		}
+	}
+	else if (sfreq < 1000) {
+		for (int i = 50; i < sfreq; i += 50) {
+			p[0].x = 150 + (LONG)(384.0 / sfreq * i);
+			p[0].y = rc.bottom - 19;
+			p[1].x = p[0].x;
+			p[1].y = rc.bottom - 20 - 256;
+			dc->Polyline(p, 2);
+		}
+	}
+	hPen = CreatePen(PS_SOLID, 1, RGB(100, 100, 100));
+	hOldPen = (HPEN)dc->SelectObject(hPen);
+	for (int i = 100; i < sfreq; i += 100) {
+		p[0].x = 150 + (LONG)(384.0 / sfreq * i);
+		p[0].y = rc.bottom - 19;
+		p[1].x = p[0].x;
+		p[1].y = rc.bottom - 20 - 256;
+		dc->Polyline(p, 2);
+	}
 	for (int i = 0; i < 128; i++) {
-		p[i].x = 150 + 3*i;
+		p[i].x = 150 + 3 * i;
 		p[i].y = rc.bottom - 20 - vm[im].data[i];
 	}
-	HPEN hOldPen, hPen;
 	switch (iAxis) {
 	case 0:
 		hPen = CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
@@ -293,8 +339,7 @@ void CGPM_VibrationDlg::drawChart(CDC* dc, int im)
 	dc->DrawText(txt, strlen(txt), &trc, DT_CENTER | DT_NOCLIP);
 	trc.left = 150 + 375;
 	trc.right = trc.left;
-	float sfreq = (float)vm[im].cfgdata.fftrate * 1000 / vm[im].cfgdata.vibpnts * vm[im].cfgdata.fftsamps * 128;
-	sprintf_s(txt, 1000, "%1.0f", sfreq);
+	sprintf_s(txt, 1000, "  %1.0f  ", sfreq);
 	dc->DrawText(txt, strlen(txt), &trc, DT_CENTER | DT_NOCLIP);
 
 
@@ -331,6 +376,37 @@ void CGPM_VibrationDlg::Send(int im, char *msg, int len)
 	
 }
 
+BOOL CGPM_VibrationDlg::OnToolTipText(UINT id, NMHDR* pNMHDR, LRESULT* pResult)
+{
+	TOOLTIPTEXT* pTTT = (TOOLTIPTEXT*)pNMHDR;
+	UINT nID = pNMHDR->idFrom;
+
+	if (pTTT->uFlags & TTF_IDISHWND)
+	{
+		nID = ::GetDlgCtrlID((HWND)nID);
+		if (nID)
+		{
+			switch (nID) {
+				//if (nID == GetDlgItem(IDC_ACTIVE)->GetDlgCtrlID())
+			case IDC_ACTIVE:
+				_tcsncpy_s(pTTT->szText, _T("Start/Stop Data Monitoring"), _TRUNCATE);
+				break;
+				//else if (nID == GetDlgItem(ID_STARTMQTT)->GetDlgCtrlID())
+			case ID_STARTMQTT:
+				_tcsncpy_s(pTTT->szText, _T("Start device data upload to MQTT broker"), _TRUNCATE);
+				break;
+			case ID_SETTIME:
+				_tcsncpy_s(pTTT->szText, _T("Synch current time to Device"), _TRUNCATE);
+				break;
+			}
+
+			pTTT->lpszText = pTTT->szText; // Sanity Check
+			pTTT->hinst = AfxGetResourceHandle(); // Don't think this is needed at all
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
 void CGPM_VibrationDlg::Recv(int im, char *msg, int *len)
 {
 	if ((vm[im].Connected==2) && (vm[im].gpmSock))
@@ -388,21 +464,29 @@ void CGPM_VibrationDlg::UpdateGUI(int im)
 
 	p = (CComboBox*)GetDlgItem(IDC_SAMPLEFREQ);
 	p->SetCurSel(vm[im].cfgdata.fftrate-1);
-	
+
+	SetDlgItemText(IDC_DEVICE, (LPCTSTR)vm[im].cfgdata.pm_name);
+	SetDlgItemText(IDC_TOPIC, (LPCTSTR)vm[im].cfgdata.mqtt_topic);
+
 	myupdate = false;
 }
 
 void CGPM_VibrationDlg::parseSP(int im, char* msg, int len)
 {
 	char valstr[10];
-	unsigned char *c = (unsigned char*)&vm[im].cfgdata, ic = 0;
+	unsigned char* c = (unsigned char*)&vm[im].cfgdata;
+	int ic = 0;
 	memset(valstr, 0, 10);
 	// make sure string starts with "SP#"
+	if ((msg[0] != 'S') || (msg[1] != 'P') || (msg[2] != '#')) return;
 	for (int i = 3; i < len; i += 2) {
 		strncpy_s(valstr,10, &msg[i], 2);
 		sscanf_s(valstr, "%hhX", &c[ic++]);
 	}
-	if (vm[im].cfgdata.version != 2) vm[im].cfgdata.version = 0;
+	if (vm[im].cfgdata.version != 2) {
+		vm[im].cfgdata.version = 0;
+		return;
+	}
 	myupdate = true;
 	UpdateGUI(im);
 	myupdate = false;
@@ -428,7 +512,7 @@ void CGPM_VibrationDlg::Disconnect(int im)
 	}
 }
 
-void CGPM_VibrationDlg::GetVersion(int im)
+bool CGPM_VibrationDlg::GetVersion(int im)
 {
 	char msg[500];
 	Send(im, "?v\r", 3);
@@ -456,8 +540,9 @@ void CGPM_VibrationDlg::GetVersion(int im)
 		pFW->EnableWindow(true);
 		vm[im].ambootloader = false;
 		vm[im].cfgdata.version = 0;
+		return true;
 	}
-	//else 
+	else return false;
 	//{
 	//	shutdown(vm[im].gpmSock, SD_SEND);
 	//	Sleep(100);
@@ -478,6 +563,7 @@ void CGPM_VibrationDlg::Connect(int im)
 	char msg[500];
 	int nResult;
 	sockaddr_in sa;
+	int n = 0;
 	
 	KillTimer(4);
 
@@ -488,7 +574,8 @@ void CGPM_VibrationDlg::Connect(int im)
 	
 	vm[im].gpmSock=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	USHORT port = 2000;
-	strcpy_s(msg, 100, &vm[im].ip[6]);
+	for (n = 0; n < sizeof(vm[im].ip); n++) if (vm[im].ip[n] == '(') break;
+	strcpy_s(msg, 100, &vm[im].ip[n+1]);
 	for (int i = 0; i < 100; i++) if (msg[i] == ')') msg[i] = 0;
 	
 	sa.sin_family = AF_INET;
@@ -560,7 +647,7 @@ void CGPM_VibrationDlg::Connect(int im)
 void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 {
 	int nResult = 0;
-	char txt[1000];
+	char txt[5000];
 	int nc;
 	int im = 0;
 
@@ -570,12 +657,18 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 	if (vm[ivm].Connected <= 0)  // when negaive, then pause before re-attempting to connect
 	{
 		Connect(ivm);
+		timeout = 0;
 		return;
 	}
 
 	if (strlen(vm[ivm].version) == 0)
 	{
-		GetVersion(ivm);
+		timeout++;
+		if (GetVersion(ivm) == false) {
+			if (timeout >= 10)
+				Disconnect(ivm);
+			return;
+		}
 		return;
 	}
 
@@ -588,17 +681,22 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 
 		Send(ivm, "sp#\r", 4); // Request system settings
 		Sleep(200);		
-		nc = 500;
+		nc = 5000;
 		Recv(ivm, txt, &nc);
 		if (nc > 0) {
 			parseSP(ivm, txt, nc);  // parse system settings and configuration
 
-			Send(ivm, "sp7,3\r", 6);  // Start Vibration App
+			//Send(ivm, "sp7,3\r", 6);  // Start Vibration App
+			//Sleep(100);
+			Send(ivm, "sp1,1000\r", 9); // Start sending vibration data
 			Sleep(100);
-			Send(ivm, "sp1,1000\r", 5); // Start sending vibration data
-			Sleep(100);
-			Send(ivm, "dm90\r", 5); // Start sending vibration data
+			//Send(ivm, "dm90\r", 5); // Start sending vibration data
 			timeout = 0;
+
+			memset(vm[ivm].data, 0, 1000);
+
+			Invalidate(false);
+			UpdateWindow();
 		}
 		return;
 	}
@@ -607,8 +705,11 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 	Recv(ivm, (char*)vm[ivm].data, &nc);
 	if (nc < 0) {
 		timeout++;
-		if (timeout > 200) {  // if we don't receive data, re-submit request for vibration data
-			Send(ivm, "dm90\r", 5);
+		if (timeout > 2 * 1000 / T_UPDATE) {  // if we don't receive data after 2 seconds, re-submit request for vibration data
+			if (chkActive->GetCheck() == BST_CHECKED) {
+				Send(ivm, "dm90\r", 5);
+				TRACE0("Activate!\r\n");
+			}
 			timeout = 0;
 		}
 		return;
@@ -617,10 +718,15 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 		// disconnect
 		TRACE0("Disconnected!\r\n");
 	} else {
+		TRACE1("Received %i bytes\r\n",nc);
 		if (nc >= 128) {
 			// data received -> update GUI
+			if (chkActive->GetCheck() == BST_UNCHECKED)
+				memset(vm[ivm].data, 0, 1000);
+
 			Invalidate(false);
 			UpdateWindow();
+			timeout = 0;
 		}
 
 		if (logFile)
@@ -633,6 +739,12 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 			//	0.001*inbuf.rec.time, inbuf.rec.latitude, inbuf.rec.longitude, inbuf.rec.heading,
 			//	inbuf.rec.std, inbuf.rec.posType, inbuf.rec.steer, inbuf.rec.speed, inbuf.rec.brake, inbuf.rec.rpm,
 			//	inbuf.rec.wheelspeed[0], inbuf.rec.wheelspeed[1], inbuf.rec.wheelspeed[2], inbuf.rec.wheelspeed[3]);
+		}
+
+		if (chkActive->GetCheck() == BST_UNCHECKED)
+		{
+			Send(ivm, "dm0\r", 4);
+			TRACE0("De-activate!\r\n");
 		}
 	}
 }
@@ -688,7 +800,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 					fwdata[5] = crc & 0xFF;
 					Send(cim, (char*)fwdata, BLK_FWSIZE + 0x10);
 					Sleep(100);
-					SetTimer(1, 100, NULL);
+					SetTimer(1, T_UPDATE, NULL);
 					SetTimer(2, 1000, NULL);
 					vm[im].upgrading = false;
 					pUpdate->ShowWindow(false);
@@ -720,7 +832,7 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 			}; 
 			if (rtn[0] == 'Q') { // exit
 				KillTimer(4);
-				SetTimer(1, 100, NULL);
+				SetTimer(1, T_UPDATE, NULL);
 				SetTimer(2, 1000, NULL);
 				vm[im].upgrading = false;
 				SetDlgItemText(IDC_UPDATE, "Firmware Update");
@@ -738,11 +850,8 @@ void CGPM_VibrationDlg::OnTimer(UINT_PTR nIDEvent)
 		}
 	}
 
-	
-
 	CDialog::OnTimer(nIDEvent);
 }
-
 
 void CGPM_VibrationDlg::OnBnClickedReset()
 {
@@ -846,7 +955,7 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 			if (iproc == 0) {
 				MessageBox("Firmware not suitable for this module. Make sure that the filename includes the Processor type.", "GPM Update Error", MB_OK | MB_ICONINFORMATION);
 				//SetTimer(1, 1000 / pRate->GetPos(), NULL);
-				SetTimer(1, 100, NULL);
+				SetTimer(1, T_UPDATE, NULL);
 			}
 			else 
 			*/
@@ -878,7 +987,7 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 				if (n == 3) {
 					vm[cim].upgrading = false;
 					//SetTimer(1, 1000 / pRate->GetPos(), NULL);
-					SetTimer(1, 100, NULL);
+					SetTimer(1, T_UPDATE, NULL);
 				}
 			}
 		}
@@ -887,7 +996,7 @@ void CGPM_VibrationDlg::OnBnClickedUpdate()
 	else {
 		KillTimer(4);
 		//SetTimer(1, 1000 / pRate->GetPos(), NULL);
-		SetTimer(1, 100, NULL);
+		SetTimer(1, T_UPDATE, NULL);
 		vm[cim].upgrading = false;
 		Sleep(100);
 		SetDlgItemText(IDC_UPDATE, "Firmware Update");
@@ -926,6 +1035,7 @@ void CGPM_VibrationDlg::OnEnChangeFreq()
 	GetDlgItemText(IDC_FREQ,msg);
 	msg = "SP81," + msg + "\r";
 	Send(cim, msg.GetBuffer(), msg.GetLength());
+	vm[cim].cfgdata.version = 0;
 }
 
 
@@ -944,6 +1054,7 @@ void CGPM_VibrationDlg::OnEnChangeGain()
 	char* cmsg = msg.GetBuffer();
 	Send(cim, cmsg, msg.GetLength());
 	TRACE1("Scale = %s\r\n", msg);
+	vm[cim].cfgdata.version = 0;
 }
 
 
@@ -957,7 +1068,8 @@ void CGPM_VibrationDlg::OnCbnSelchangeAxis()
 		char msg[10];
 		sprintf_s(msg,10,"SP88,%i\r",iAxis);
 		Send(cim, msg, strlen(msg));
-	}  
+	}
+	vm[cim].cfgdata.version = 0;
 }
 
 
@@ -970,6 +1082,7 @@ void CGPM_VibrationDlg::OnCbnSelchangeScale()
 	char msg[] = "SP82,0\r";
 	msg[5] += i;
 	Send(cim, msg, 7);
+	vm[cim].cfgdata.version = 0;
 }
 
 
@@ -982,6 +1095,7 @@ void CGPM_VibrationDlg::OnCbnSelchangeFftwndfcn()
 	char msg[10];
 	sprintf_s(msg, 10, "SP83,%i\r", i);
 	Send(cim, msg, strlen(msg));
+	vm[cim].cfgdata.version = 0;
 }
 
 
@@ -995,7 +1109,6 @@ void CGPM_VibrationDlg::OnCbnSelchangeDwnsamples()
 	sprintf_s(msg, 10, "SP85,%i\r", i);
 	Send(cim, msg, strlen(msg));
 	vm[cim].cfgdata.version = 0; // invalidate configdata
-
 }
 
 
@@ -1096,9 +1209,9 @@ void CGPM_VibrationDlg::OnCbnSelchangeSamplefreq()
 
 void CGPM_VibrationDlg::OnBnClickedActive()
 {
-	CButton *p = (CButton*)GetDlgItem(IDC_ACTIVE);
-	if (p->GetCheck() == BST_CHECKED) SetTimer(1, 100, NULL);
-	else KillTimer(1);
+	//CButton *p = (CButton*)GetDlgItem(IDC_ACTIVE);
+	//if (p->GetCheck() == BST_CHECKED) SetTimer(1, T_UPDATE, NULL);
+	//else KillTimer(1);
 }
 
 
@@ -1131,5 +1244,13 @@ void CGPM_VibrationDlg::OnBnClickedSettime()
 	Send(cim, cmd, strlen(cmd));
 	Sleep(100);
 	sprintf_s(cmd, 20, "st%i,%i,%i\r", today.tm_year+1900, today.tm_mon+1, today.tm_mday);
+	Send(cim, cmd, strlen(cmd));
+}
+
+
+void CGPM_VibrationDlg::OnBnClickedStartmqtt()
+{
+	char cmd[20];
+	sprintf_s(cmd, 20, "WF50\r");
 	Send(cim, cmd, strlen(cmd));
 }

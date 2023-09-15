@@ -60,9 +60,18 @@ typedef struct
 	uint8_t fftlog;             ///< Compute fft samples in (1:log) scale (0: linear)
 	uint8_t fftplotlines;       ///< Plot lines (1) instead of dots(0) in the display
 	float fftscale;             ///< scaling factor for vibration data
-	uint16_t fftfreq;            ///< Set frequency for synthesized data
+	uint16_t fftfreq;           ///< Set frequency for synthesized data
 	uint8_t fftaxis;            ///< Select axis to process data for (0 = all)
 	uint8_t fftrate;            ///< Sample rate in kHz to capture raw IMU samples
+	int8_t pm_name[20];         ///< Name of the device for acquisition
+	uint32_t wftimeout;         ///< Timeout in milliseconds, when waiting for a connection to a server on the network.
+	int8_t ntp_host[30];        ///< hostname of the NTP DayTime server to use
+	uint16_t ntp_port;          ///< port number of the NTP DayTime server to use
+	int8_t mqtt_host[30];       ///< hostname of the MQTT server to use
+	uint16_t mqtt_port;         ///< port number of the MQTT server to use
+	uint8_t vib_auto;           ///< automatically start sending vibration data to cloud
+	uint8_t mqtt_topic[20];     ///< Main Topic to submit data under
+	uint32_t canfilter[40];     ///< CAN filters. '0' terminates list. Empty list means no filtering.
 } CONFIG_DATA;
 
 typedef struct
@@ -92,6 +101,8 @@ typedef struct
 #define MAX_FWSIZE (1500)
 #define BLK_FWSIZE (0x100)
 #define ERASE_BLOCK_SIZE (16384UL)  // 0x4000
+
+#define T_UPDATE 200
 
 extern unsigned char fwdata[MAX_FWSIZE]; // 1Mb firmware hex file max
 
@@ -129,7 +140,7 @@ public:
 	void Disconnect(int im);
 	void ProcessPeriodicVM(int ivm);
 	void UpdateGUI(int im);
-	void GetVersion(int im);
+	bool GetVersion(int im);
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
@@ -141,6 +152,7 @@ protected:
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
+	afx_msg BOOL OnToolTipText(UINT id, NMHDR* pNMHDR, LRESULT* pResult);
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
@@ -163,4 +175,5 @@ public:
 	afx_msg void OnBnClickedActive();
 	afx_msg void OnCbnEditchangeComlist();
 	afx_msg void OnBnClickedSettime();
+	afx_msg void OnBnClickedStartmqtt();
 };

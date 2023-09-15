@@ -3,14 +3,10 @@
 // Used by GPM_Vibration.rc
 //
 #define IDC_RESET                       4
-#define IDC_CAL                         5
+#define ID_RESET						4
 #define IDC_UPDATE                      5
-#define IDC_RESET2                      6
 #define IDC_SVRCONNECT                  6
-#define IDC_UPDATE2                     6
-#define IDC_ADD_IP                      6
 #define IDC_SIMULINKCONNECT             7
-#define IDC_SIMULINKCONNECT2            8
 #define IDC_SETUTCTIME                  8
 #define IDM_ABOUTBOX                    0x0010
 #define IDD_ABOUTBOX                    100
@@ -51,6 +47,8 @@
 #define IDC_ACTIVE                      1026
 #define ID_HELP2                        57671
 #define ID_SETTIME                      57671
+#define ID_STARTMQTT                    57672
+#define ID_SETTIME2                     57673
 
 // Next default values for new objects
 // 
