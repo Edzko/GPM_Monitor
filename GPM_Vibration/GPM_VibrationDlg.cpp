@@ -181,6 +181,8 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 	CButton *pFW = (CButton*)GetDlgItem(IDC_UPDATE);
 	pFW->EnableWindow(false);
 
+	pActive = (CButton*)GetDlgItem(IDC_ACTIVE);
+
 	theApp.m_pDiscoverThread = AfxBeginThread(&ProcDiscoverThreadFunction, this);
 	SetTimer(1, 100, NULL);
 
@@ -591,9 +593,9 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 		if (nc > 0) {
 			parseSP(ivm, txt, nc);  // parse system settings and configuration
 
-			Send(ivm, "sp7,3\r", 6);  // Start Vibration App
-			Sleep(100);
-			Send(ivm, "dm90\r", 5); // Start sending vibration data
+			//Send(ivm, "sp7,3\r", 6);  // Start Vibration App
+			//Sleep(100);
+			//Send(ivm, "dm90\r", 5); // Start sending vibration data
 			timeout = 0;
 		}
 		return;
@@ -604,7 +606,8 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 	if (nc < 0) {
 		timeout++;
 		if (timeout > 200) {  // if we don't receive data, re-submit request for vibration data
-			Send(ivm, "dm90\r", 5);
+			if (pActive->GetCheck()==BST_CHECKED)
+				Send(ivm, "dm90\r", 5);
 			timeout = 0;
 		}
 		return;
@@ -630,6 +633,10 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 			//	inbuf.rec.std, inbuf.rec.posType, inbuf.rec.steer, inbuf.rec.speed, inbuf.rec.brake, inbuf.rec.rpm,
 			//	inbuf.rec.wheelspeed[0], inbuf.rec.wheelspeed[1], inbuf.rec.wheelspeed[2], inbuf.rec.wheelspeed[3]);
 		}
+
+		if (pActive->GetCheck()==BST_UNCHECKED)
+			Send(ivm, "dm\r", 3);
+
 	}
 }
 

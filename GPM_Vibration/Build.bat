@@ -1,1 +1,1 @@
-set __MY_BUILD=587 
+set __MY_BUILD=588 
