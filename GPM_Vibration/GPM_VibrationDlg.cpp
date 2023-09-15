@@ -184,6 +184,8 @@ BOOL CGPM_VibrationDlg::OnInitDialog()
 	theApp.m_pDiscoverThread = AfxBeginThread(&ProcDiscoverThreadFunction, this);
 	SetTimer(1, 100, NULL);
 
+	chkActive = (CButton*)GetDlgItem(IDC_ACTIVE);
+
 	logFile = NULL;
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
@@ -592,6 +594,8 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 			parseSP(ivm, txt, nc);  // parse system settings and configuration
 
 			Send(ivm, "sp7,3\r", 6);  // Start Vibration App
+			Sleep(100);
+			Send(ivm, "sp1,1000\r", 5); // Start sending vibration data
 			Sleep(100);
 			Send(ivm, "dm90\r", 5); // Start sending vibration data
 			timeout = 0;
@@ -1063,9 +1067,12 @@ void CGPM_VibrationDlg::OnCbnSelchangeComlist()
 	if (i >= 0) {
 		char vmname[100];
 		pCOMList->GetLBText(i, vmname);
-		for (im = 0; im < 10; im++)
-			if (strcmp(vm[cim].ip,vmname)==0)
+		for (im = 0; im < 10; im++) {
+			if (strcmp(vm[cim].ip, vmname) == 0)
+			{
 				UpdateGUI(im);
+			}
+		}
 	}
 }
 

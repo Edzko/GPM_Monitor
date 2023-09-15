@@ -111,6 +111,7 @@ public:
 	CComboBox *pCOMList;
 	CSliderCtrl* pRate;
 	CProgressCtrl* pUpdate;
+	CButton* chkActive;
 	int cim;  // current im;
 	sockaddr_in si_other;
 	char jwt[1000];
