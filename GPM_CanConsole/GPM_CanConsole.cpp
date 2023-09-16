@@ -6,6 +6,8 @@
 #include <canlib.h>
 #include <conio.h>
 
+#include "api/candle.h"
+
 #define MAX_CHANNELS 3
 #define CAN_MSG_CONSOLE 0x7E0
 #define CAN_MSG_FIRMWARE 0x7E1
@@ -43,7 +45,7 @@ typedef struct driverData_T {
 driverData m_channelData;
 driverData* m_DriverConfig = &m_channelData;
 
-bool InitDriver(void)
+bool InitKvaserDriver(void)
 {
 	int  i;
 	int  stat;
@@ -103,32 +105,124 @@ bool InitDriver(void)
 	return found;
 }
 
+void WideToChar(wchar_t* wt, char *t)
+{
+	int i = 0;
+	while (wt[i] != 0) {
+		t[i] = (char)wt[i];
+		i++;
+	}
+	t[i] = 0;
+}
+candle_handle dev;
+candle_frame_t cframe;
 
+bool InitCandleDriver(void) {
+	candle_list_handle clist;
+	uint8_t num_interfaces;
+	bool hResult = false;
+	wchar_t *wpath;
+	char path[1000];
+
+	if (candle_list_scan(&clist)) {
+		if (candle_list_length(clist, &num_interfaces)) {
+			for (uint8_t i = 0; i < num_interfaces; i++) {
+				if (candle_dev_get(clist, i, &dev)) {
+					wpath = candle_dev_get_path(dev);
+					WideToChar(wpath, path);
+					printf("Candle Interface = %s\r\n", path);
+					
+					return true;
+				}
+
+			}
+		}
+		candle_list_free(clist);
+	}
+	return hResult;
+}
+
+stMsg_T stMsg;
+long id;
+unsigned char cdata[10];
+//DWORD time;
+unsigned int dlc, flags;
+bool haveKvaser, haveCandleApi;
+
+void sendCAN(int id, unsigned char dlc, unsigned char* data)
+{
+	bool rtn;
+	if (haveKvaser) {
+		stMsg.ArbIDOrHeader = id;	// arbritration ID
+		memcpy_s(&stMsg.Data[0], 8, data, dlc);
+		stMsg.NumberBytesData = dlc;
+
+		rtn = canWrite(m_DriverConfig->channel[0].hnd,id,data,dlc,canMSG_STD);
+	}
+	if (haveCandleApi)
+	{
+		cframe.can_id = id;
+		memcpy_s(cframe.data, 8, data, dlc);
+		cframe.can_dlc = dlc;
+		
+		rtn = candle_frame_send(dev, 0, &cframe);
+	}
+}
+bool readCAN()
+{
+	DWORD time;
+	if (haveKvaser) {
+		if (canRead(m_channelData.channel[0].hnd, &id, &cdata[0], &dlc, &flags, &time) != canOK) { return false; };
+	}
+	if (haveCandleApi) {
+		if (candle_frame_read(dev, &cframe, 0) == false) { return false; };
+		id = cframe.can_id;
+		memcpy(cdata, cframe.data, 8);
+		dlc = cframe.can_dlc;
+	}
+	return true;
+}
 
 int main(int argc, char* argv[])
 {
-	stMsg_T stMsg;
-	long id;
-	unsigned char cdata[10];
-	DWORD time;
-	unsigned int dlc, flags;
 	unsigned int i, loop = 0;
 	bool updating = false;
 	bool nextBlock = false;
 	unsigned short crc, fwstat = 0;
 	int rtn, iFW, nFW, wFW;
 	FILE* fw;
+	int stat;
 
 	if (argc == 2) if ((strcmp(argv[1],"--help")==0) || (strcmp(argv[1],"/?")==0)) {
 		printf("Syntax: \r\n   GPM_CanConsole [<CAN channel>] [<firmware.bin>]\r\n");
 		return 0;
 	}
 
-	if (InitDriver() == false) {
+	haveKvaser = InitKvaserDriver();
+	if (haveKvaser == false) {
 		canUnloadLibrary();
-		printf("No KVaser adaptor found.\r\n");
+	}
+
+	haveCandleApi = InitCandleDriver();
+	if (haveCandleApi == false) {
+		// unload
+	}
+
+	if ((!haveKvaser) && (!haveCandleApi))
+	{
+		printf("No CAN adaptor found.\r\n");
 		exit(-1);
 	}
+
+	// dump can messages
+	//while (true) {
+	//	if (candle_frame_read(dev, &cframe, 100))
+	//	{
+	//		printf("ID=%3X(%i): %02X %02X %02X %02X %02X %02X %02X %02X\r\n",
+	//			cframe.can_id, cframe.can_dlc, cframe.data[0], cframe.data[1], cframe.data[2], cframe.data[3],
+	//			cframe.data[4], cframe.data[5], cframe.data[6], cframe.data[7]);
+	//	}
+	//}
 
 	if (argc > 1) {
 		if (strlen(argv[argc - 1]) > 2) {
@@ -137,7 +231,7 @@ int main(int argc, char* argv[])
 			errno_t nErr = fopen_s(&fw, argv[argc - 1], "rb");
 			if (nErr == 0) {
 				updating = true;
-				nFW = fread(fwfile, 1, sizeof(fwfile), fw);
+				nFW = (int)fread(fwfile, 1, sizeof(fwfile), fw);
 				nFW = (nFW / BLK_FWSIZE + 1) * BLK_FWSIZE;
 				fclose(fw);
 				crc = 0;
@@ -149,7 +243,19 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	int stat = canBusOn(m_channelData.channel[0].hnd);
+	if (haveKvaser)
+	{
+		stat = canBusOn(m_channelData.channel[0].hnd);
+	}
+	if (haveCandleApi)
+	{
+		bool hResult = candle_dev_open(dev);
+		if (!hResult) exit(-1); // failed
+		hResult = candle_channel_set_bitrate(dev, 0, 500000);
+		if (!hResult) printf("Could not set bitrate.\r\n");
+		hResult = candle_channel_start(dev, 0, CANDLE_MODE_NORMAL);
+		if (!hResult) printf("Could not start channel.\r\n");
+	}
 
 	if (updating)
 		printf("Connected. Press <ESC> to quit. Press F2 to update again.\r\n");
@@ -157,15 +263,8 @@ int main(int argc, char* argv[])
 		printf("Connected. Press <ESC> to quit.\r\n");
 
 	if (!updating) {
-		stMsg.ArbIDOrHeader = CAN_MSG_CONSOLE;	// arbritration ID
-		strcpy_s((char*)&stMsg.Data[0], 8, "?v\r");
-		stMsg.NumberBytesData = (char)strlen((char*)stMsg.Data);
-
-		rtn = canWrite(m_DriverConfig->channel[0].hnd,
-			stMsg.ArbIDOrHeader,
-			&stMsg.Data[0],
-			stMsg.NumberBytesData,
-			canMSG_STD);
+		char getver[] = "?v\r";
+		sendCAN(CAN_MSG_CONSOLE, 3, (unsigned char*)getver);
 	}
 
 	while (true) {
@@ -180,7 +279,7 @@ int main(int argc, char* argv[])
 					errno_t nErr = fopen_s(&fw, argv[argc - 1], "rb");
 					if (nErr == 0) {
 						updating = true;
-						nFW = fread(fwfile, 1, sizeof(fwfile), fw);
+						nFW = (int)fread(fwfile, 1, sizeof(fwfile), fw);
 						nFW = (nFW / BLK_FWSIZE + 1) * BLK_FWSIZE;
 						fclose(fw);
 						crc = 0;
@@ -193,19 +292,13 @@ int main(int argc, char* argv[])
 			}
 			else if (key == 27) break;
 			else {
-				stMsg.ArbIDOrHeader = CAN_MSG_CONSOLE;	// arbritration ID
-				stMsg.Data[0] = key;
-				stMsg.NumberBytesData = 1;
-
-				rtn = canWrite(m_DriverConfig->channel[0].hnd,
-					stMsg.ArbIDOrHeader,
-					&stMsg.Data[0],
-					stMsg.NumberBytesData,
-					canMSG_STD);
+				unsigned char ckey = key;
+				sendCAN(CAN_MSG_CONSOLE, 1, &ckey);
 			}
 		}
 
-		while (canRead(m_channelData.channel[0].hnd, &id, &cdata[0], &dlc, &flags, &time) == canOK) {
+		while (readCAN()) {
+			
 			if (id == CAN_MSG_TERMINAL) {
 				cdata[dlc] = 0;
 				printf("%s", cdata);
@@ -243,15 +336,13 @@ int main(int argc, char* argv[])
 					cdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
 					printf("\rFirmware: 0x%08X  (%i%%)", iFW, iFW * 100 / nFW);
 				}
-				rtn = canWrite(m_DriverConfig->channel[0].hnd,
-					CAN_MSG_FIRMWARE, &cdata, 6, canMSG_STD);
+				sendCAN(CAN_MSG_FIRMWARE, 6, cdata);
 				Sleep(2);
 				if (updating) {
 					// send 64 messages
 					for (int ifw = 0; ifw < BLK_FWSIZE; ifw += 8) {
-						rtn = canWrite(m_DriverConfig->channel[0].hnd,
-							CAN_MSG_FIRMWARE, &fwfile[iFW + ifw], 8, canMSG_STD);
-						Sleep(1);
+						sendCAN(CAN_MSG_FIRMWARE, 8, &fwfile[iFW + ifw]);
+						Sleep(0);
 					}
 					if (iFW == 0) iFW = -1;
 					fwstat = 0;
@@ -261,17 +352,25 @@ int main(int argc, char* argv[])
 				// after timeout, re-transmit firmware packet
 			}
 		}
-		Sleep(1);
+		Sleep(0);
 	}
 	
-	for (i = 0; i < m_channelData.channelCount; i++) {
-		canStatus stat;
-		stat = canBusOff(m_channelData.channel[i].hnd);
-		stat = canClose(m_channelData.channel[i].hnd);
-	}
-	
+	if (haveKvaser) {
+		for (i = 0; i < m_channelData.channelCount; i++) {
+			canStatus stat;
+			stat = canBusOff(m_channelData.channel[i].hnd);
+			stat = canClose(m_channelData.channel[i].hnd);
+		}
 
-	canUnloadLibrary();
+
+		canUnloadLibrary();
+	}
+
+	if (haveCandleApi)
+	{
+		candle_channel_stop(dev, 0);
+		candle_dev_close(dev);
+	}
 	exit(0);
 }
 

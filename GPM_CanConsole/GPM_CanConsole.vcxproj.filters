@@ -18,6 +18,12 @@
     <ClCompile Include="GPM_CanConsole.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Candle\api\candle.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Candle\api\candle_ctrl_req.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Kvaser\INC\canlib.h">
