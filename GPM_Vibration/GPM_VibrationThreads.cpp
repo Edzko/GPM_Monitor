@@ -32,27 +32,30 @@ UINT __cdecl ProcDiscoverThreadFunction(LPVOID pParam)
 	{
 		char buf[1000];
 		char txt[1000];
+		char ipstr[100];
 		int slen = sizeof(sockaddr);
 		int n = recvfrom(s, buf, sizeof(buf) - 1, 0, (sockaddr*)&dlg->si_other, &slen);
 		if (n > 0)
 		{
 			buf[n] = 0;
-			sprintf_s(txt, 100, "%s (%i.%i.%i.%i)\r\n", buf,dlg->si_other.sin_addr.S_un.S_un_b.s_b1,
+			sprintf_s(ipstr, 100, "%i.%i.%i.%i", dlg->si_other.sin_addr.S_un.S_un_b.s_b1,
 				dlg->si_other.sin_addr.S_un.S_un_b.s_b2,
 				dlg->si_other.sin_addr.S_un.S_un_b.s_b3,
 				dlg->si_other.sin_addr.S_un.S_un_b.s_b4);
+			sprintf_s(txt, 100, "%s (%s)\r\n", buf,ipstr);
 
 			// check to see if IP string is already there
 			if (dlg->pCOMList->FindString(0, txt) == CB_ERR) {
-				int iList = dlg->pCOMList->AddString(txt);
-				// add to list of modules
-				dlg->pCOMList->SetItemData(iList, 100);
-				TRACE1("Discovered and added IP %s\r\n",txt);
-				found = true;
-				for (int i = 0; i < 10; i++) 
-					if (strcmp(dlg->vm[i].ip, txt) == 0) 
-						found = false;
-				if (found) {
+				found = false;
+				// double-check that the IP does not already exist
+				for (int ci = 0; ci < dlg->pCOMList->GetCount(); ci++)
+					if (dlg->pCOMList->GetItemData(ci) == dlg->si_other.sin_addr.S_un.S_addr)
+						found = true;
+				if (!found) {   // This device is not yet in the list
+					int iList = dlg->pCOMList->AddString(txt);
+					// add to list of modules
+					dlg->pCOMList->SetItemData(iList, dlg->si_other.sin_addr.S_un.S_addr);
+					TRACE1("Discovered and added %s\r\n",txt);
 					int i;
 					for (i = 0; i < 10; i++) {
 						if (strlen(dlg->vm[i].ip) == 0) {
