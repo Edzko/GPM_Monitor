@@ -726,6 +726,12 @@ void CGPM_VibrationDlg::ProcessPeriodicVM(int ivm)
 
 			Invalidate(false);
 			UpdateWindow();
+			if (vm[ivm].cfgdata.fftaxis<3)
+				sprintf_s(txt, 1000, "Time: %02i:%02i:%02i", vm[ivm].data[129], vm[ivm].data[130], vm[ivm].data[131]);
+			else
+				sprintf_s(txt, 1000, "Time: %02i:%02i:%02i", vm[ivm].data[387], vm[ivm].data[388], vm[ivm].data[389]);
+
+			SetDlgItemText(IDC_GPMTIME, txt);
 			timeout = 0;
 		}
 
@@ -1252,5 +1258,5 @@ void CGPM_VibrationDlg::OnBnClickedStartmqtt()
 {
 	char cmd[20];
 	sprintf_s(cmd, 20, "WF50\r");
-	Send(cim, cmd, strlen(cmd));
+	Send(cim, cmd, 5);
 }
