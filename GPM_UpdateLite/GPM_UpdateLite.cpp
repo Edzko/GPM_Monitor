@@ -7,7 +7,7 @@
 #include <ws2tcpip.h>
 
 #define MAX_FWSIZE (1500)
-#define BLK_FWSIZE (0x200)
+#define BLK_FWSIZE (0x100)
 #define ERASE_BLOCK_SIZE (16384UL)  // 0x4000
 
 SOCKET gpmSock;
@@ -85,6 +85,9 @@ int main(int argc, char* argv[])
 	int iResult = 0;
 	sockaddr_in sa;
 	char msg[500];
+	char rtn[100];
+	int nc = 100;
+	unsigned short crc;
 
 
     if (argc == 1) {
@@ -160,6 +163,8 @@ int main(int argc, char* argv[])
 			DWORD dwError = GetLastError();
 			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, dwError, 0, errMsg, 500, NULL);
 			printf("Error: %ws\r\n", errMsg);
+			if (dwError == 2) printf("Make sure that the USB cable is connected.\r\n");
+			if (dwError == 5) printf("Make sure that the COM port is not busy.\r\n");
 			return 0;
 		}
 		int fSuccess = GetCommState(hCommPort, &dcbCommPort);
@@ -215,7 +220,7 @@ int main(int argc, char* argv[])
 		}
 		Connected = 100;
 	}
-	int nc = 500;
+	nc = 500;
 	Recv(msg, &nc);  // empty any possible residual buffer
 
 	Send((char*)"?v\r", 3);
@@ -260,10 +265,11 @@ int main(int argc, char* argv[])
 		printf("Could not open file.\r\n");
 		return 1;
 	}
+	memset(fwfile, 255, sizeof(fwfile));
 	int nFW = (int)fread(fwfile, 1, sizeof(fwfile), fw);
 	nFW = (nFW / ERASE_BLOCK_SIZE + 1) * ERASE_BLOCK_SIZE;
 	if (fw) fclose(fw);
-	unsigned short crc = 0;
+	crc = 0;
 	for (int i = 0; i < nFW; i++) crc += fwfile[i];
 	fw = NULL;
 	int iFW = 0;
@@ -289,14 +295,14 @@ int main(int argc, char* argv[])
 	}
 	*/
 	for (n = 0; n < 3; n++) {
-		sprintf_s(msg, 100, "rs3,%i\r", iproc);
+		//sprintf_s(msg, 100, "rs3,%i\r", iproc);
+		sprintf_s(msg, 100, "rs3,0\r");
 		Send(msg, (int)strlen(msg));
 		
-		Sleep(100);
+		Sleep(1000);
 		nc = 100;
 		while (nc == 100) {
-			Recv(msg, &nc);
-			
+			Recv(msg, &nc);			
 		}
 		if (nc > 0) {
 			if (msg[nc - 1] == 'K') 
@@ -334,16 +340,19 @@ int main(int argc, char* argv[])
 		}
 		return 0;
 	}
-
+	//Sleep(2000);
 	while (true) {
-		char rtn[100];
-		int nc = 100;
+		nc = 100;
 		memset(rtn, 0, 100);
 		Sleep(10);
 		Recv(rtn, &nc);
 		if ((nc >= 1) || (iFW == 0))
 		{
 			wFW = 0;
+			if (nc > 1) {
+				int _fw, nfw = sscanf_s(rtn, "K%i", &_fw);
+				if (nfw > 0) iFW = _fw * BLK_FWSIZE;
+			}
 			printf("Upgrading: pkt=%i/%i\r", iFW / BLK_FWSIZE, nFW / BLK_FWSIZE);
 			if ((rtn[0] == 'K') || (iFW == 0)) { // okay. send next
 				if (iFW >= nFW) {  // finished
@@ -386,6 +395,11 @@ int main(int argc, char* argv[])
 			wFW++;
 			if (wFW > 10)
 			{
+				memcpy(fwdata + 0x10, &fwfile[iFW], BLK_FWSIZE);
+				fwdata[0] = 0x55;
+				fwdata[1] = 0xAA;
+				fwdata[2] = (iFW / BLK_FWSIZE) >> 8;
+				fwdata[3] = (iFW / BLK_FWSIZE) & 0xFF;
 				Send((char*)fwdata, BLK_FWSIZE + 0x10);
 				wFW = 0;
 			}
