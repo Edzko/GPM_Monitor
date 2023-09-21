@@ -1005,9 +1005,9 @@ void CGPM_MonitorDlg::OnBnClickedUpdate()
 		}
 		memset(fwfile, 255, sizeof(fwfile));
 		errno_t nErr = fopen_s(&fw, ofn.lpstrFile, "rb");
-		nFW = fread(fwfile, 1, sizeof(fwfile), fw);
+		nFW = (int)fread(fwfile, 1, sizeof(fwfile), fw);
 		nFW = (nFW / ERASE_BLOCK_SIZE + 1) * ERASE_BLOCK_SIZE;
-		fclose(fw);
+		if (fw) fclose(fw);
 		crc = 0;
 		for (int i = 0; i < nFW; i++) crc += fwfile[i];
 		fw = NULL;
