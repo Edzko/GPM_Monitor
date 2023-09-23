@@ -6,8 +6,6 @@ Companion Applications for Magna RTK-GPS UBlox & Vibration module.
 
 ![GUI](https://github.com/Edzko/GPM_Monitor/blob/master/GPM_Monitor/hlp/images/gpmgui.png)
 
-[Help file](GPM_Monitor/hlp/GPM_Monitor.chm) 
-
 ## GPM Update Lite
 
 Console-based firmware upgrade utility. Run this utility on the same [Wifi] network as the UBlox module. The utility can discover the module on the network, enter update firmware based on a firmware hex file provided in the command line.
@@ -16,9 +14,29 @@ Console-based firmware upgrade utility. Run this utility on the same [Wifi] netw
 
 Note: without an IP address provided, the App will connect to the first available module it finds.
 
+## GPM CAN Console
+
+Compatible with KVaser Leaf-Lite or with USB2CAN (CandleAPI)
+
+
+
 ## GPM Vibration App
 
 ![GUI](https://github.com/Edzko/GPM_Monitor/blob/master/GPM_Vibration/hlp/images/gpmgui.png)
+
+## MQTT Client (python)
+
+Pre-requisites
+
+	pip install import json
+	pip install paho-mqtt
+	pip install pandas 
+	pip install matplotlib
+	pip install numpy
+
+## GPM Token Server
+
+Windows 10 Background service to provide a 'bridge' to Google Cloud services, and to provide private NTP time service.
 
 ## GPM Matlab
 
