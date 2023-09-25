@@ -14,16 +14,36 @@ client_id = f'subscribe-{random.randint(0, 100)}'
 # username = 'emqx'
 # password = 'public'
 
+class device_class:
+    valid: bool
+    name: chr
+    rms: float
+
 topics = []
+topic = ""
 devices = []
+device = ""
 rms = 0.0
 
-def save_callback():
-    print("Save Clicked")
+def select_fmt3():
+    global topic, device
+    mytopic = topic+"/DataAnalysis/Vibration/" + device
+    client.publish(mytopic, '{"cmd":"wf53,3"}',0,False)
+
+def select_fmt4():
+    global topic, device
+    mytopic = topic+"/DataAnalysis/Vibration/" + device
+    client.publish(mytopic, '{"cmd":"wf53,4"}',0,False)
     
 def select_Topic(sender, value):
-    print(value)
+    global topic
+    itopic = value.index('/')
+    topic = value[:itopic]
+    print(topic)
+    
 def select_Device(sender, value):
+    global device
+    device = value
     print(value)
 
 def connect_mqtt() -> mqtt_client:
@@ -41,6 +61,7 @@ def connect_mqtt() -> mqtt_client:
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
+        global devices, topics
         try:
             data = json.loads(msg.payload)
             found = False
@@ -62,7 +83,8 @@ def subscribe(client: mqtt_client):
             dpg.set_value("rms",rms)
             dpg.set_value("version",f"Firmware: `{data['firmware']}`")
         except:
-            print(f"Bad message: `{msg.payload}` ")
+            print("")
+            #print(f"Bad message: `{msg.payload}` ")
     # Subscribe to all topics on the broker
     client.subscribe("#")
     client.on_message = on_message
@@ -78,11 +100,12 @@ with dpg.font_registry():
     
 with dpg.window(label="Management Window", no_resize=True) as main_window:
     dpg.add_text("Hello world")
-    dpg.add_button(label="Save", callback=save_callback)
-    dpg.add_input_text(label="string", width=200)
-    dpg.add_slider_float(label="float",width=200)
-    topiclist = dpg.add_combo(label="Topics", items=topics, callback=select_Topic,width=200)
-    devicelist = dpg.add_combo(label="Devices", items=devices, callback=select_Device,width=200)
+    dpg.add_button(label="FMT 3", pos=(0,30), callback=select_fmt3)
+    dpg.add_button(label="FMT 4", pos=(50,30), callback=select_fmt4)
+    dpg.add_input_text(label="string", pos=(0,60), width=200)
+    dpg.add_slider_float(label="float",pos=(0,90), width=200)
+    topiclist = dpg.add_combo(label="Topics", pos=(0,120), items=topics, callback=select_Topic,width=200)
+    devicelist = dpg.add_combo(label="Devices", pos=(0,150), items=devices, callback=select_Device,width=200)
     dpg.bind_font(default_font)
     dpg.add_text("Device",pos=(300,10))
     dpg.add_text("Version",pos=(300,30),tag="version")
