@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GPM_TokenServer", "GPM_Toke
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GPM_GoogleApp", "GPM_GoogleApp\GPM_GoogleApp.csproj", "{075CD7C0-3906-4923-9676-43C8E5CDBAE8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GPM_MQTTClient2", "GPM_MQTTClient2\GPM_MQTTClient2\GPM_MQTTClient2.csproj", "{07CD1841-1440-435B-B5B1-0F8C1217FC38}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GPM_MQTTClient2", "GPM_MQTTClient2\GPM_MQTTClient2.csproj", "{07CD1841-1440-435B-B5B1-0F8C1217FC38}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

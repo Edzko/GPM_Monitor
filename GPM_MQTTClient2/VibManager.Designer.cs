@@ -30,8 +30,8 @@ namespace GPM_MQTTClient2
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea9 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series9 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.cbDevices = new System.Windows.Forms.ComboBox();
             this.cbTopics = new System.Windows.Forms.ComboBox();
@@ -45,22 +45,27 @@ namespace GPM_MQTTClient2
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.lblIP = new System.Windows.Forms.Label();
             this.label11 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
+            this.label15 = new System.Windows.Forms.Label();
+            this.label14 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
+            this.label13 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.cbChart = new System.Windows.Forms.ComboBox();
-            this.comboBox6 = new System.Windows.Forms.ComboBox();
+            this.cbScale = new System.Windows.Forms.ComboBox();
             this.cbSamples = new System.Windows.Forms.ComboBox();
+            this.cbAxis = new System.Windows.Forms.ComboBox();
             this.cbRate = new System.Windows.Forms.ComboBox();
             this.cbInterval = new System.Windows.Forms.ComboBox();
             this.cbWindow = new System.Windows.Forms.ComboBox();
             this.cbFmt = new System.Windows.Forms.ComboBox();
             this.button1 = new System.Windows.Forms.Button();
+            this.lblTime = new System.Windows.Forms.Label();
             this.lblFirmware = new System.Windows.Forms.Label();
             this.txtRMS = new System.Windows.Forms.TextBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
@@ -70,14 +75,8 @@ namespace GPM_MQTTClient2
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.vibChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.cbAxis = new System.Windows.Forms.ComboBox();
-            this.cbScale = new System.Windows.Forms.ComboBox();
+            this.butUpdate = new System.Windows.Forms.Button();
             this.cbDSamp = new System.Windows.Forms.ComboBox();
-            this.label13 = new System.Windows.Forms.Label();
-            this.label14 = new System.Windows.Forms.Label();
-            this.label15 = new System.Windows.Forms.Label();
-            this.lblIP = new System.Windows.Forms.Label();
-            this.lblTime = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -115,6 +114,8 @@ namespace GPM_MQTTClient2
             this.cbDevices.Name = "cbDevices";
             this.cbDevices.Size = new System.Drawing.Size(213, 25);
             this.cbDevices.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbDevices, "Current device");
+            this.cbDevices.SelectedIndexChanged += new System.EventHandler(this.cbDevices_SelectedIndexChanged);
             // 
             // cbTopics
             // 
@@ -124,6 +125,7 @@ namespace GPM_MQTTClient2
             this.cbTopics.Name = "cbTopics";
             this.cbTopics.Size = new System.Drawing.Size(352, 25);
             this.cbTopics.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbTopics, "Current topic");
             // 
             // butConnect
             // 
@@ -144,6 +146,7 @@ namespace GPM_MQTTClient2
             this.txtPort.Size = new System.Drawing.Size(67, 25);
             this.txtPort.TabIndex = 1;
             this.txtPort.Text = "1883";
+            this.toolTip1.SetToolTip(this.txtPort, "Port number to use for MQTT broker");
             // 
             // txtPassword
             // 
@@ -154,6 +157,7 @@ namespace GPM_MQTTClient2
             this.txtPassword.Size = new System.Drawing.Size(189, 25);
             this.txtPassword.TabIndex = 1;
             this.txtPassword.Text = "user12345";
+            this.toolTip1.SetToolTip(this.txtPassword, "Password for MQTT broker");
             // 
             // txtUser
             // 
@@ -163,6 +167,7 @@ namespace GPM_MQTTClient2
             this.txtUser.Size = new System.Drawing.Size(154, 25);
             this.txtUser.TabIndex = 1;
             this.txtUser.Text = "anonymous";
+            this.toolTip1.SetToolTip(this.txtUser, "User name for MQTT broker");
             // 
             // txtHost
             // 
@@ -172,6 +177,7 @@ namespace GPM_MQTTClient2
             this.txtHost.Size = new System.Drawing.Size(277, 25);
             this.txtHost.TabIndex = 1;
             this.txtHost.Text = "oakmonte.homedns.org";
+            this.toolTip1.SetToolTip(this.txtHost, "host name or address of MQTT broker");
             // 
             // label4
             // 
@@ -214,7 +220,6 @@ namespace GPM_MQTTClient2
             this.groupBox2.Controls.Add(this.lblIP);
             this.groupBox2.Controls.Add(this.label11);
             this.groupBox2.Controls.Add(this.label15);
-            this.groupBox2.Controls.Add(this.label7);
             this.groupBox2.Controls.Add(this.label14);
             this.groupBox2.Controls.Add(this.label6);
             this.groupBox2.Controls.Add(this.label10);
@@ -225,7 +230,6 @@ namespace GPM_MQTTClient2
             this.groupBox2.Controls.Add(this.label5);
             this.groupBox2.Controls.Add(this.cbChart);
             this.groupBox2.Controls.Add(this.cbDSamp);
-            this.groupBox2.Controls.Add(this.comboBox6);
             this.groupBox2.Controls.Add(this.cbScale);
             this.groupBox2.Controls.Add(this.cbSamples);
             this.groupBox2.Controls.Add(this.cbAxis);
@@ -233,6 +237,7 @@ namespace GPM_MQTTClient2
             this.groupBox2.Controls.Add(this.cbInterval);
             this.groupBox2.Controls.Add(this.cbWindow);
             this.groupBox2.Controls.Add(this.cbFmt);
+            this.groupBox2.Controls.Add(this.butUpdate);
             this.groupBox2.Controls.Add(this.button1);
             this.groupBox2.Controls.Add(this.lblTime);
             this.groupBox2.Controls.Add(this.lblFirmware);
@@ -246,23 +251,42 @@ namespace GPM_MQTTClient2
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Device Manager:";
             // 
+            // lblIP
+            // 
+            this.lblIP.AutoSize = true;
+            this.lblIP.Location = new System.Drawing.Point(236, 68);
+            this.lblIP.Name = "lblIP";
+            this.lblIP.Size = new System.Drawing.Size(72, 17);
+            this.lblIP.TabIndex = 5;
+            this.lblIP.Text = "IP address:";
+            this.toolTip1.SetToolTip(this.lblIP, "Local IP address of the device on the WiFI network");
+            // 
             // label11
             // 
             this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(225, 236);
+            this.label11.Location = new System.Drawing.Point(54, 240);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(39, 17);
             this.label11.TabIndex = 4;
             this.label11.Text = "Chart";
             // 
-            // label7
+            // label15
             // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(215, 172);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(78, 17);
-            this.label7.TabIndex = 4;
-            this.label7.Text = "Down Samp";
+            this.label15.AutoSize = true;
+            this.label15.Location = new System.Drawing.Point(15, 175);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(78, 17);
+            this.label15.TabIndex = 4;
+            this.label15.Text = "Down Samp";
+            // 
+            // label14
+            // 
+            this.label14.AutoSize = true;
+            this.label14.Location = new System.Drawing.Point(36, 140);
+            this.label14.Name = "label14";
+            this.label14.Size = new System.Drawing.Size(38, 17);
+            this.label14.TabIndex = 4;
+            this.label14.Text = "Scale";
             // 
             // label6
             // 
@@ -309,6 +333,15 @@ namespace GPM_MQTTClient2
             this.label8.TabIndex = 4;
             this.label8.Text = "Msg Format";
             // 
+            // label13
+            // 
+            this.label13.AutoSize = true;
+            this.label13.Location = new System.Drawing.Point(33, 104);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(31, 17);
+            this.label13.TabIndex = 4;
+            this.label13.Text = "Axis";
+            // 
             // label5
             // 
             this.label5.AutoSize = true;
@@ -329,21 +362,34 @@ namespace GPM_MQTTClient2
             "FFT (fmt 4)",
             "Waterfall (fmt 4)",
             "FFT & Waterfall (fmt 3)"});
-            this.cbChart.Location = new System.Drawing.Point(270, 233);
+            this.cbChart.Location = new System.Drawing.Point(113, 237);
             this.cbChart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbChart.Name = "cbChart";
             this.cbChart.Size = new System.Drawing.Size(140, 25);
             this.cbChart.TabIndex = 3;
             this.cbChart.SelectedIndexChanged += new System.EventHandler(this.chChart_SelectedIndexChanged);
             // 
-            // comboBox6
+            // cbScale
             // 
-            this.comboBox6.FormattingEnabled = true;
-            this.comboBox6.Location = new System.Drawing.Point(299, 169);
-            this.comboBox6.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.comboBox6.Name = "comboBox6";
-            this.comboBox6.Size = new System.Drawing.Size(111, 25);
-            this.comboBox6.TabIndex = 3;
+            this.cbScale.FormattingEnabled = true;
+            this.cbScale.Items.AddRange(new object[] {
+            "0.05",
+            "0.06",
+            "0.07",
+            "0.08",
+            "0.09",
+            "0.1",
+            "0.15",
+            "0.2",
+            "0.25",
+            "0.3"});
+            this.cbScale.Location = new System.Drawing.Point(99, 136);
+            this.cbScale.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.cbScale.Name = "cbScale";
+            this.cbScale.Size = new System.Drawing.Size(105, 25);
+            this.cbScale.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbScale, "Acquisition scaling factor");
+            this.cbScale.SelectedIndexChanged += new System.EventHandler(this.cbScale_SelectedIndexChanged);
             // 
             // cbSamples
             // 
@@ -357,7 +403,23 @@ namespace GPM_MQTTClient2
             this.cbSamples.Name = "cbSamples";
             this.cbSamples.Size = new System.Drawing.Size(111, 25);
             this.cbSamples.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbSamples, "Acquisition sample size");
             this.cbSamples.SelectedIndexChanged += new System.EventHandler(this.cbSamples_SelectedIndexChanged);
+            // 
+            // cbAxis
+            // 
+            this.cbAxis.FormattingEnabled = true;
+            this.cbAxis.Items.AddRange(new object[] {
+            "Acc X",
+            "Acc Y",
+            "Acc Z"});
+            this.cbAxis.Location = new System.Drawing.Point(99, 101);
+            this.cbAxis.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.cbAxis.Name = "cbAxis";
+            this.cbAxis.Size = new System.Drawing.Size(105, 25);
+            this.cbAxis.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbAxis, "IMU axis to monitor");
+            this.cbAxis.SelectedIndexChanged += new System.EventHandler(this.cbAxis_SelectedIndexChanged);
             // 
             // cbRate
             // 
@@ -372,6 +434,7 @@ namespace GPM_MQTTClient2
             this.cbRate.Name = "cbRate";
             this.cbRate.Size = new System.Drawing.Size(111, 25);
             this.cbRate.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbRate, "Acquisition sampling frequency");
             this.cbRate.SelectedIndexChanged += new System.EventHandler(this.cbRate_SelectedIndexChanged);
             // 
             // cbInterval
@@ -391,16 +454,34 @@ namespace GPM_MQTTClient2
             this.cbInterval.Name = "cbInterval";
             this.cbInterval.Size = new System.Drawing.Size(140, 25);
             this.cbInterval.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbInterval, "MQTT Message interval");
             this.cbInterval.SelectedIndexChanged += new System.EventHandler(this.cbInterval_SelectedIndexChanged);
             // 
             // cbWindow
             // 
             this.cbWindow.FormattingEnabled = true;
+            this.cbWindow.Items.AddRange(new object[] {
+            "Rectangle",
+            "Gaussian",
+            "Hamming",
+            "Hann",
+            "Bart",
+            "Welch",
+            "Triangle",
+            "Brhn",
+            "Blkm",
+            "Kais",
+            "Nutl",
+            "Bkha",
+            "Bknu",
+            "Fltt",
+            "Sine"});
             this.cbWindow.Location = new System.Drawing.Point(539, 133);
             this.cbWindow.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbWindow.Name = "cbWindow";
             this.cbWindow.Size = new System.Drawing.Size(140, 25);
             this.cbWindow.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbWindow, "Select the Fourier Transform Windowing function");
             this.cbWindow.SelectedIndexChanged += new System.EventHandler(this.cbWindow_SelectedIndexChanged);
             // 
             // cbFmt
@@ -415,6 +496,7 @@ namespace GPM_MQTTClient2
             this.cbFmt.Name = "cbFmt";
             this.cbFmt.Size = new System.Drawing.Size(140, 25);
             this.cbFmt.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbFmt, "Select the MQTT Message Type");
             this.cbFmt.SelectedIndexChanged += new System.EventHandler(this.cbFmt_SelectedIndexChanged);
             // 
             // button1
@@ -425,7 +507,18 @@ namespace GPM_MQTTClient2
             this.button1.Size = new System.Drawing.Size(87, 30);
             this.button1.TabIndex = 2;
             this.button1.Text = "Reset";
+            this.toolTip1.SetToolTip(this.button1, "Reset the device");
             this.button1.UseVisualStyleBackColor = true;
+            // 
+            // lblTime
+            // 
+            this.lblTime.AutoSize = true;
+            this.lblTime.Location = new System.Drawing.Point(29, 42);
+            this.lblTime.Name = "lblTime";
+            this.lblTime.Size = new System.Drawing.Size(96, 17);
+            this.lblTime.TabIndex = 1;
+            this.lblTime.Text = "Date and Time:";
+            this.toolTip1.SetToolTip(this.lblTime, "Date and time of most recent message from device");
             // 
             // lblFirmware
             // 
@@ -435,6 +528,7 @@ namespace GPM_MQTTClient2
             this.lblFirmware.Size = new System.Drawing.Size(64, 17);
             this.lblFirmware.TabIndex = 1;
             this.lblFirmware.Text = "Firmware:";
+            this.toolTip1.SetToolTip(this.lblFirmware, "Device Application firmware version");
             // 
             // txtRMS
             // 
@@ -466,6 +560,7 @@ namespace GPM_MQTTClient2
             this.butCmd.Size = new System.Drawing.Size(95, 23);
             this.butCmd.TabIndex = 2;
             this.butCmd.Text = "Enter";
+            this.toolTip1.SetToolTip(this.butCmd, "Click ENTER to issue the command");
             this.butCmd.UseVisualStyleBackColor = true;
             this.butCmd.Click += new System.EventHandler(this.butCmd_Click);
             // 
@@ -475,6 +570,7 @@ namespace GPM_MQTTClient2
             this.txtCmd.Name = "txtCmd";
             this.txtCmd.Size = new System.Drawing.Size(346, 25);
             this.txtCmd.TabIndex = 1;
+            this.toolTip1.SetToolTip(this.txtCmd, "Type the Console command here");
             // 
             // rtxtConsole
             // 
@@ -483,6 +579,7 @@ namespace GPM_MQTTClient2
             this.rtxtConsole.Size = new System.Drawing.Size(449, 226);
             this.rtxtConsole.TabIndex = 0;
             this.rtxtConsole.Text = "";
+            this.toolTip1.SetToolTip(this.rtxtConsole, "Response to Console commands");
             // 
             // groupBox4
             // 
@@ -498,52 +595,28 @@ namespace GPM_MQTTClient2
             // 
             // vibChart
             // 
-            chartArea9.Name = "ChartArea1";
-            this.vibChart.ChartAreas.Add(chartArea9);
+            chartArea1.Name = "ChartArea1";
+            this.vibChart.ChartAreas.Add(chartArea1);
             this.vibChart.Location = new System.Drawing.Point(7, 25);
             this.vibChart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.vibChart.Name = "vibChart";
-            series9.ChartArea = "ChartArea1";
-            series9.Name = "Series1";
-            this.vibChart.Series.Add(series9);
+            series1.ChartArea = "ChartArea1";
+            series1.Name = "Series1";
+            this.vibChart.Series.Add(series1);
             this.vibChart.Size = new System.Drawing.Size(673, 269);
             this.vibChart.TabIndex = 0;
             this.vibChart.Text = "vibChart";
             // 
-            // cbAxis
+            // butUpdate
             // 
-            this.cbAxis.FormattingEnabled = true;
-            this.cbAxis.Items.AddRange(new object[] {
-            "Acc X",
-            "Acc Y",
-            "Acc Z"});
-            this.cbAxis.Location = new System.Drawing.Point(99, 101);
-            this.cbAxis.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.cbAxis.Name = "cbAxis";
-            this.cbAxis.Size = new System.Drawing.Size(105, 25);
-            this.cbAxis.TabIndex = 3;
-            this.cbAxis.SelectedIndexChanged += new System.EventHandler(this.cbAxis_SelectedIndexChanged);
-            // 
-            // cbScale
-            // 
-            this.cbScale.FormattingEnabled = true;
-            this.cbScale.Items.AddRange(new object[] {
-            "0.05",
-            "0.06",
-            "0.07",
-            "0.08",
-            "0.09",
-            "0.1",
-            "0.15",
-            "0.2",
-            "0.25",
-            "0.3"});
-            this.cbScale.Location = new System.Drawing.Point(99, 136);
-            this.cbScale.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.cbScale.Name = "cbScale";
-            this.cbScale.Size = new System.Drawing.Size(105, 25);
-            this.cbScale.TabIndex = 3;
-            this.cbScale.SelectedIndexChanged += new System.EventHandler(this.cbScale_SelectedIndexChanged);
+            this.butUpdate.Location = new System.Drawing.Point(500, 233);
+            this.butUpdate.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.butUpdate.Name = "butUpdate";
+            this.butUpdate.Size = new System.Drawing.Size(87, 30);
+            this.butUpdate.TabIndex = 2;
+            this.butUpdate.Text = "Update";
+            this.toolTip1.SetToolTip(this.butUpdate, "Update firmware");
+            this.butUpdate.UseVisualStyleBackColor = true;
             // 
             // cbDSamp
             // 
@@ -562,52 +635,8 @@ namespace GPM_MQTTClient2
             this.cbDSamp.Name = "cbDSamp";
             this.cbDSamp.Size = new System.Drawing.Size(105, 25);
             this.cbDSamp.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbDSamp, "Down sampling factor");
             this.cbDSamp.SelectedIndexChanged += new System.EventHandler(this.cbDSamp_SelectedIndexChanged);
-            // 
-            // label13
-            // 
-            this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(33, 104);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(31, 17);
-            this.label13.TabIndex = 4;
-            this.label13.Text = "Axis";
-            // 
-            // label14
-            // 
-            this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(36, 140);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(38, 17);
-            this.label14.TabIndex = 4;
-            this.label14.Text = "Scale";
-            // 
-            // label15
-            // 
-            this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(15, 175);
-            this.label15.Name = "label15";
-            this.label15.Size = new System.Drawing.Size(78, 17);
-            this.label15.TabIndex = 4;
-            this.label15.Text = "Down Samp";
-            // 
-            // lblIP
-            // 
-            this.lblIP.AutoSize = true;
-            this.lblIP.Location = new System.Drawing.Point(236, 68);
-            this.lblIP.Name = "lblIP";
-            this.lblIP.Size = new System.Drawing.Size(72, 17);
-            this.lblIP.TabIndex = 5;
-            this.lblIP.Text = "IP address:";
-            // 
-            // lblTime
-            // 
-            this.lblTime.AutoSize = true;
-            this.lblTime.Location = new System.Drawing.Point(29, 42);
-            this.lblTime.Name = "lblTime";
-            this.lblTime.Size = new System.Drawing.Size(96, 17);
-            this.lblTime.TabIndex = 1;
-            this.lblTime.Text = "Date and Time:";
             // 
             // VibManager
             // 
@@ -622,6 +651,7 @@ namespace GPM_MQTTClient2
             this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Name = "VibManager";
             this.Text = "Vibration Acquisition Manager";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.VibManager_FormClosed);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
@@ -655,7 +685,6 @@ namespace GPM_MQTTClient2
         private System.Windows.Forms.TextBox txtRMS;
         private System.Windows.Forms.DataVisualization.Charting.Chart vibChart;
         private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.ComboBox comboBox6;
         private System.Windows.Forms.ComboBox cbSamples;
         private System.Windows.Forms.ComboBox cbRate;
         private System.Windows.Forms.ComboBox cbInterval;
@@ -663,7 +692,6 @@ namespace GPM_MQTTClient2
         private System.Windows.Forms.ComboBox cbFmt;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label7;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.Label label8;
@@ -677,11 +705,12 @@ namespace GPM_MQTTClient2
         private System.Windows.Forms.Label label15;
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.Label label13;
-        private System.Windows.Forms.ComboBox cbDSamp;
         private System.Windows.Forms.ComboBox cbScale;
         private System.Windows.Forms.ComboBox cbAxis;
         private System.Windows.Forms.Label lblIP;
         private System.Windows.Forms.Label lblTime;
+        private System.Windows.Forms.ComboBox cbDSamp;
+        private System.Windows.Forms.Button butUpdate;
     }
 }
 
