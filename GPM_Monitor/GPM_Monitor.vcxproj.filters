@@ -27,11 +27,11 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="hlp\HTMLDefines.h">
-      <Filter>Help Files</Filter>
-    </ClInclude>
     <ClInclude Include="GPM_AHRS.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hlp\HTMLDefines.h">
+      <Filter>Help Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -62,7 +62,12 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="hlp\HIDD_ROOT_DIALOG.htm">
+    <CustomBuild Include="Resource.h">
+      <Filter>Resources</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="hlp\GPM_Monitor.chm">
       <Filter>Help Files</Filter>
     </None>
     <None Include="hlp\GPM_Monitor.hhc">
@@ -71,13 +76,11 @@
     <None Include="hlp\GPM_Monitor.hhk">
       <Filter>Help Files</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="Resource.h">
-      <Filter>Resources</Filter>
-    </CustomBuild>
-    <CustomBuild Include="hlp\GPM_Monitor.hhp">
+    <None Include="hlp\GPM_Monitor.hhp">
       <Filter>Help Files</Filter>
-    </CustomBuild>
+    </None>
+    <None Include="hlp\HIDD_ROOT_DIALOG.htm">
+      <Filter>Help Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

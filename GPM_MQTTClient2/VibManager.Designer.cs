@@ -33,6 +33,8 @@ namespace GPM_MQTTClient2
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.chkEncryption = new System.Windows.Forms.CheckBox();
+            this.chkCertificate = new System.Windows.Forms.CheckBox();
             this.cbDevices = new System.Windows.Forms.ComboBox();
             this.cbTopics = new System.Windows.Forms.ComboBox();
             this.butConnect = new System.Windows.Forms.Button();
@@ -66,6 +68,7 @@ namespace GPM_MQTTClient2
             this.cbWindow = new System.Windows.Forms.ComboBox();
             this.cbFmt = new System.Windows.Forms.ComboBox();
             this.butUpdate = new System.Windows.Forms.Button();
+            this.butHelp = new System.Windows.Forms.Button();
             this.butReset = new System.Windows.Forms.Button();
             this.lblTime = new System.Windows.Forms.Label();
             this.lblFirmware = new System.Windows.Forms.Label();
@@ -77,6 +80,7 @@ namespace GPM_MQTTClient2
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.vibChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.helpProvider = new System.Windows.Forms.HelpProvider();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -86,6 +90,8 @@ namespace GPM_MQTTClient2
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.chkEncryption);
+            this.groupBox1.Controls.Add(this.chkCertificate);
             this.groupBox1.Controls.Add(this.cbDevices);
             this.groupBox1.Controls.Add(this.cbTopics);
             this.groupBox1.Controls.Add(this.butConnect);
@@ -105,6 +111,28 @@ namespace GPM_MQTTClient2
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "MQTT Broker:";
+            // 
+            // chkEncryption
+            // 
+            this.chkEncryption.AutoSize = true;
+            this.chkEncryption.Enabled = false;
+            this.chkEncryption.Location = new System.Drawing.Point(296, 213);
+            this.chkEncryption.Name = "chkEncryption";
+            this.chkEncryption.Size = new System.Drawing.Size(88, 21);
+            this.chkEncryption.TabIndex = 4;
+            this.chkEncryption.Text = "Encryption";
+            this.chkEncryption.UseVisualStyleBackColor = true;
+            // 
+            // chkCertificate
+            // 
+            this.chkCertificate.AutoSize = true;
+            this.chkCertificate.Enabled = false;
+            this.chkCertificate.Location = new System.Drawing.Point(76, 213);
+            this.chkCertificate.Name = "chkCertificate";
+            this.chkCertificate.Size = new System.Drawing.Size(135, 21);
+            this.chkCertificate.TabIndex = 4;
+            this.chkCertificate.Text = "Validate Certificate";
+            this.chkCertificate.UseVisualStyleBackColor = true;
             // 
             // cbDevices
             // 
@@ -239,6 +267,7 @@ namespace GPM_MQTTClient2
             this.groupBox2.Controls.Add(this.cbWindow);
             this.groupBox2.Controls.Add(this.cbFmt);
             this.groupBox2.Controls.Add(this.butUpdate);
+            this.groupBox2.Controls.Add(this.butHelp);
             this.groupBox2.Controls.Add(this.butReset);
             this.groupBox2.Controls.Add(this.lblTime);
             this.groupBox2.Controls.Add(this.lblFirmware);
@@ -362,11 +391,11 @@ namespace GPM_MQTTClient2
             "Modes & Octaves (fmt 3)",
             "FFT (fmt 4)",
             "Waterfall (fmt 4)",
-            "FFT & Waterfall (fmt 3)"});
+            "FFT & Waterfall (fmt 4)"});
             this.cbChart.Location = new System.Drawing.Point(113, 237);
             this.cbChart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbChart.Name = "cbChart";
-            this.cbChart.Size = new System.Drawing.Size(140, 25);
+            this.cbChart.Size = new System.Drawing.Size(265, 25);
             this.cbChart.TabIndex = 3;
             this.cbChart.SelectedIndexChanged += new System.EventHandler(this.chChart_SelectedIndexChanged);
             // 
@@ -522,7 +551,7 @@ namespace GPM_MQTTClient2
             // 
             // butUpdate
             // 
-            this.butUpdate.Location = new System.Drawing.Point(500, 233);
+            this.butUpdate.Location = new System.Drawing.Point(406, 232);
             this.butUpdate.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.butUpdate.Name = "butUpdate";
             this.butUpdate.Size = new System.Drawing.Size(87, 30);
@@ -532,9 +561,20 @@ namespace GPM_MQTTClient2
             this.butUpdate.UseVisualStyleBackColor = true;
             this.butUpdate.Click += new System.EventHandler(this.butUpdate_Click);
             // 
+            // butHelp
+            // 
+            this.butHelp.Location = new System.Drawing.Point(592, 232);
+            this.butHelp.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.butHelp.Name = "butHelp";
+            this.butHelp.Size = new System.Drawing.Size(87, 30);
+            this.butHelp.TabIndex = 2;
+            this.butHelp.Text = "Help";
+            this.butHelp.UseVisualStyleBackColor = true;
+            this.butHelp.Click += new System.EventHandler(this.butHelp_Click);
+            // 
             // butReset
             // 
-            this.butReset.Location = new System.Drawing.Point(593, 233);
+            this.butReset.Location = new System.Drawing.Point(499, 232);
             this.butReset.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.butReset.Name = "butReset";
             this.butReset.Size = new System.Drawing.Size(87, 30);
@@ -582,7 +622,7 @@ namespace GPM_MQTTClient2
             this.groupBox3.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.groupBox3.Size = new System.Drawing.Size(461, 302);
+            this.groupBox3.Size = new System.Drawing.Size(461, 438);
             this.groupBox3.TabIndex = 0;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Console:";
@@ -610,7 +650,7 @@ namespace GPM_MQTTClient2
             // 
             this.rtxtConsole.Location = new System.Drawing.Point(6, 68);
             this.rtxtConsole.Name = "rtxtConsole";
-            this.rtxtConsole.Size = new System.Drawing.Size(449, 226);
+            this.rtxtConsole.Size = new System.Drawing.Size(449, 363);
             this.rtxtConsole.TabIndex = 0;
             this.rtxtConsole.Text = "";
             this.toolTip1.SetToolTip(this.rtxtConsole, "Response to Console commands");
@@ -622,7 +662,7 @@ namespace GPM_MQTTClient2
             this.groupBox4.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.groupBox4.Size = new System.Drawing.Size(687, 302);
+            this.groupBox4.Size = new System.Drawing.Size(687, 438);
             this.groupBox4.TabIndex = 0;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Data Visualization:";
@@ -637,15 +677,20 @@ namespace GPM_MQTTClient2
             series2.ChartArea = "ChartArea1";
             series2.Name = "Series1";
             this.vibChart.Series.Add(series2);
-            this.vibChart.Size = new System.Drawing.Size(673, 269);
+            this.vibChart.Size = new System.Drawing.Size(673, 405);
             this.vibChart.TabIndex = 0;
             this.vibChart.Text = "vibChart";
+            this.vibChart.PostPaint += new System.EventHandler<System.Windows.Forms.DataVisualization.Charting.ChartPaintEventArgs>(this.vibChart_PostPaint);
+            // 
+            // helpProvider
+            // 
+            this.helpProvider.HelpNamespace = "GPM_MQTTClient2.chm";
             // 
             // VibManager
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1183, 612);
+            this.ClientSize = new System.Drawing.Size(1183, 745);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
@@ -714,6 +759,10 @@ namespace GPM_MQTTClient2
         private System.Windows.Forms.Label lblTime;
         private System.Windows.Forms.ComboBox cbDSamp;
         private System.Windows.Forms.Button butUpdate;
+        private System.Windows.Forms.CheckBox chkEncryption;
+        private System.Windows.Forms.CheckBox chkCertificate;
+        private System.Windows.Forms.Button butHelp;
+        private System.Windows.Forms.HelpProvider helpProvider;
     }
 }
 

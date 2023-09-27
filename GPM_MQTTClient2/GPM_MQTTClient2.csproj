@@ -79,6 +79,10 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <None Include="Help\GPM_MQTTClient2.hhc" />
+    <None Include="Help\GPM_MQTTClient2.hhk" />
+    <None Include="Help\GPM_MQTTClient2.hhp" />
+    <None Include="Help\Log1.log" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -93,8 +97,8 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Help\mqttclient_intro.htm" />
     <Content Include="Magna.ico" />
-    <Content Include="MagnaIcon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

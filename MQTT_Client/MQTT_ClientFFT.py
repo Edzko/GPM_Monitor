@@ -11,8 +11,8 @@ import numpy as np
 
 broker = 'oakmonte.homedns.org'
 port = 1883
-topic = "Test/DataAnalysis/Vibration/Acquisition"
-device = "pm_device11"
+topic = "Magna/DataAnalysis/Vibration/Acquisition"
+device = "pm_device6"
 # Generate a Client ID with the subscribe prefix.
 client_id = f'subscribe-{random.randint(0, 100)}'
 # username = 'emqx'

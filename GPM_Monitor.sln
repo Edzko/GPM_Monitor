@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GPM_GoogleApp", "GPM_Google
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GPM_MQTTClient2", "GPM_MQTTClient2\GPM_MQTTClient2.csproj", "{07CD1841-1440-435B-B5B1-0F8C1217FC38}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "GPM_Install", "GPM_Install\GPM_Install.vdproj", "{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -103,6 +105,12 @@ Global
 		{07CD1841-1440-435B-B5B1-0F8C1217FC38}.Release|x64.Build.0 = Release|Any CPU
 		{07CD1841-1440-435B-B5B1-0F8C1217FC38}.Release|x86.ActiveCfg = Release|Any CPU
 		{07CD1841-1440-435B-B5B1-0F8C1217FC38}.Release|x86.Build.0 = Release|Any CPU
+		{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}.Debug|Any CPU.ActiveCfg = Debug
+		{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}.Debug|x64.ActiveCfg = Debug
+		{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}.Debug|x86.ActiveCfg = Debug
+		{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}.Release|Any CPU.ActiveCfg = Release
+		{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}.Release|x64.ActiveCfg = Release
+		{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
