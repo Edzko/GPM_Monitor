@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
 
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
@@ -19,7 +20,8 @@ namespace GPM_MQTTClient2
         public static String access_token = "no valid token received yet.";
         public static MqttClient client;
         public static string clientId;
-        int selectedChart = -1;
+        internal bool guiUpdate = false;
+        internal int idev = 0;
 
         List<string> topiclist = new List<string>();
         List<string> devicelist = new List<string>();
@@ -27,6 +29,7 @@ namespace GPM_MQTTClient2
         internal class DeviceData
         {
             internal string name;
+            internal string topic;
             internal bool valid;
             internal string firmware;
             internal string timestamp;
@@ -54,6 +57,9 @@ namespace GPM_MQTTClient2
             client.MqttMsgPublishReceived += client_MqttMsgPublishReceived;
             client.ConnectionClosed += Client_ConnectionClosed;
             client.MqttMsgSubscribed += Client_MqttMsgSubscribed;
+
+            vibChart.Series["Series1"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+
         }
 
         private void butConnect_Click(object sender, EventArgs e)
@@ -90,6 +96,7 @@ namespace GPM_MQTTClient2
             {
                 DeviceData dd = new DeviceData();
                 dd.name = dev;
+                dd.topic = topic;
                 dd.valid = false;
                 dd.rms = new double[0];
                 dd.FFTmode = new double[7];
@@ -98,6 +105,7 @@ namespace GPM_MQTTClient2
                 devices.Add(dd);
                 devicelist.Add(dev);
                 cbDevices.Items.Add(dev);
+                if (devicelist.Count == 1) cbDevices.Text = dev;
 
                 // request parameters
                 int it = topic.LastIndexOf('/');
@@ -125,13 +133,16 @@ namespace GPM_MQTTClient2
                 devices[idev].timestamp = time;
             }
 
-            if ((cbDevices.Text == dev) && (cbChart.SelectedIndex == 0))
+            if (cbDevices.Text == dev)
             {
                 txtRMS.Text = rms.ToString();
                 lblTime.Text = "Date and Time: " + time;
-                vibChart.Series["Series1"].Points.AddY(rms);
-                if (vibChart.Series["Series1"].Points.Count > 10)
-                    vibChart.Series["Series1"].Points.RemoveAt(0);
+                if (cbChart.SelectedIndex == 0)
+                {
+                    vibChart.Series["RMS"].Points.AddY(rms);
+                    if (vibChart.Series["RMS"].Points.Count > 10)
+                        vibChart.Series["RMS"].Points.RemoveAt(0);
+                }
             }
         }
         private void updateSettings(string dev, string fw, string ip, double scale, int window, int axis, int rate, int samples, int interval, int pnts)
@@ -153,6 +164,7 @@ namespace GPM_MQTTClient2
 
             if (dev == cbDevices.Text)
             {
+                guiUpdate = true;
                 lblFirmware.Text = "Firmware: " + fw;
                 lblIP.Text = "IP Address: " + ip;
                 cbAxis.SelectedIndex = axis;
@@ -162,10 +174,11 @@ namespace GPM_MQTTClient2
                 cbScale.Text = scale.ToString();
                 cbInterval.Text = interval.ToString();
                 cbDSamp.Text = pnts.ToString();
+                guiUpdate = false;
             }
         }
 
-        private void updateFFT(string dev, double[] values)
+        private void updateFFT(string dev, double[] values, double fmax)
         {
             int idev = devices.FindIndex(x => x.name == dev);
             if (idev >= 0) 
@@ -173,27 +186,68 @@ namespace GPM_MQTTClient2
                 for (int i = 0; i < values.Length; i++)
                     devices[idev].FFTvalues[0, i] = values[i];
             }
-            if ((dev == cbTopics.Text) && (cbChart.SelectedIndex == 4))
+            if ((dev == cbDevices.Text) && (cbChart.SelectedIndex == 4))
             {
+                vibChart.Series["FFT"].Points.Clear();
                 for (int i = 0; i < values.Length; i++)
-                    vibChart.Series["Series1"].Points[i].YValues[0] = values[i];
+                {
+                    vibChart.Series["FFT"].Points.AddXY(i * fmax / 128, values[i]);
+                }
+                vibChart.ChartAreas[0].AxisX.Minimum = 0;
+                vibChart.ChartAreas[0].AxisX.Maximum = fmax;
+                vibChart.ChartAreas[0].AxisX.Interval = 25;
             }
         }
-        private void updateBins(string dev, double[] values)
+        private void updateBins(string dev, double[] values, double[] valuesOct)
         {
             int idev = devices.FindIndex(x => x.name == dev);
             if (idev >= 0) 
             {
                 for (int i = 0; i < values.Length; i++)
+                {
                     devices[idev].FFTmode[i] = values[i];
+                    devices[idev].FFToct[i] = valuesOct[i];
+                }
             }
-            if ((dev == cbDevices.Text) && (cbChart.SelectedIndex == 1))
+            if (dev == cbDevices.Text)
             {
-                vibChart.Series["Series1"].Points.Clear();
-                double[] x = { 30, 60, 90, 120, 150, 180, 210 };
-                for (int i = 0; i < values.Length; i++)
-                    vibChart.Series["Series1"].Points.AddXY(x[i], values[i]);
-                vibChart.Update();
+                if (cbChart.SelectedIndex == 1)
+                {
+                    vibChart.Series["modeBins"].Points.Clear();
+                    double[] x = { 30, 60, 90, 120, 150, 180, 210 };
+                    for (int i = 0; i < values.Length; i++)
+                    {
+                        DataPoint p = new DataPoint(x[i], valuesOct[i]);
+                        p.AxisLabel = x[i].ToString();
+                        p.MarkerStyle = MarkerStyle.Diamond;
+                        p.MarkerSize = 10;
+                        p.MarkerColor = Color.Red;
+                        vibChart.Series["modeBins"].Points.Add(p);
+                    }
+                    vibChart.ChartAreas[0].AxisX.Minimum = 30;
+                    vibChart.ChartAreas[0].AxisX.Maximum = 210;
+                    vibChart.ChartAreas[0].AxisX.Interval = 30;
+                    vibChart.Update();
+                }
+                if (cbChart.SelectedIndex == 2)
+                {
+                    vibChart.Series["octoBins"].Points.Clear();
+                    double[] x = { 10, 20, 40, 80, 160, 320, 640 };
+                    for (int i = 0; i < valuesOct.Length; i++)
+                    {
+                        DataPoint p = new DataPoint(x[i], valuesOct[i]);
+                        p.AxisLabel = x[i].ToString();
+                        p.MarkerStyle = MarkerStyle.Diamond;
+                        p.MarkerSize = 10;
+                        p.MarkerColor = Color.Black;
+                        vibChart.Series["octoBins"].Points.Add(p);
+                    }
+                    vibChart.ChartAreas[0].AxisX.Minimum = 0;
+                    vibChart.ChartAreas[0].AxisX.Maximum = 650;
+                    vibChart.ChartAreas[0].AxisX.Interval = 50;
+                    //vibChart.ResetAutoValues();
+                    vibChart.Update();
+                }
             }
         }
 
@@ -222,8 +276,7 @@ namespace GPM_MQTTClient2
                 //cbTopics.Items.Add(e.Topic);
 
                 MethodInvoker cbtopicDelegate = delegate ()
-                { cbTopics.Items.Add(e.Topic); };
-
+                { cbTopics.Items.Add(e.Topic); if (topiclist.Count == 1) cbTopics.Text = e.Topic; };
                 //This will be true if Current thread is not UI thread.
                 if (this.InvokeRequired) this.Invoke(cbtopicDelegate); else cbtopicDelegate();
             }
@@ -255,12 +308,8 @@ namespace GPM_MQTTClient2
                     { updateDev(dev, rms, time); };
                     //This will be true if Current thread is not UI thread.
                     if (this.InvokeRequired) this.Invoke(updateDelegate); else updateDelegate();
-
-
                 }
                 catch (Exception) { }
-
-
 
                 if (e.Topic.IndexOf("Console") >= 0)
                 {
@@ -309,18 +358,25 @@ namespace GPM_MQTTClient2
                 if (values.Length==7)
                 {
                     // now also get Octaves
-
+                    double[] valuesOct = new double[root.GetProperty("valuesOct").GetArrayLength()];
+                    JsonElement valsOct = root.GetProperty("valuesOct");
+                    k = 0;
+                    foreach (JsonElement val in vals.EnumerateArray())
+                    {
+                        valuesOct[k++] = val.GetDouble();
+                    }
                     // then update bins
 
                     MethodInvoker fftDelegate = delegate ()
-                    { updateBins(dev, values); };
+                    { updateBins(dev, values, valuesOct); };
                     //This will be true if Current thread is not UI thread.
                     if (this.InvokeRequired) this.Invoke(fftDelegate); else fftDelegate();
                 }
                 if (values.Length==128)
                 {
+                    double fmax = (double)root.GetProperty("fmax").GetDouble();
                     MethodInvoker fftDelegate = delegate ()
-                    { updateFFT(dev, values); };
+                    { updateFFT(dev, values, fmax); };
                     //This will be true if Current thread is not UI thread.
                     if (this.InvokeRequired) this.Invoke(fftDelegate); else fftDelegate();
                 }
@@ -347,46 +403,44 @@ namespace GPM_MQTTClient2
 
         private void chChart_SelectedIndexChanged(object sender, EventArgs e)
         {
+            vibChart.ResetAutoValues();
+            vibChart.Series.Clear();
             switch (cbChart.SelectedIndex)
             {
-                case 0:
-                    System.Diagnostics.Debug.WriteLine("RMS Trend");
-                    vibChart.Series["Series1"].Points.Clear();
-                    vibChart.Series["Series1"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+                case 0:   // RMS
+                    vibChart.Series.Add("RMS");
+                    vibChart.Series["RMS"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
                     //chart title  
                     vibChart.Titles.Clear();
                     vibChart.Titles.Add("RMS Trend");
-                    selectedChart = 0;
                     break;
-                case 1:
-                    System.Diagnostics.Debug.WriteLine("30 Hz Modes");
-                    vibChart.Series["Series1"].Points.Dispose();
+                case 1:   // 30 Hz Modes
+                    vibChart.Series.Add("modeBins");
+                    vibChart.Series["modeBins"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
                     vibChart.Titles.Clear();
-                    vibChart.Titles.Add("30 Hz Modes");
-                    selectedChart = 0;
-                    for (int i = 0; i < 7; i++)
-                        vibChart.Series["Series1"].Points.AddXY(i, 0);
+                    vibChart.Titles.Add("30 Hz Modes");                    
                     break;
-                case 2:
-                    System.Diagnostics.Debug.WriteLine("30 Hz octaves");
+                case 2:  // 30 Hz Octaves
+                    vibChart.Series.Add("octoBins");
+                    vibChart.Series["octoBins"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+                    vibChart.Titles.Clear();
+                    vibChart.Titles.Add("30 Hz Octaves");
                     break;
-                case 3:
-                    System.Diagnostics.Debug.WriteLine("Mode & Octaves");
+                case 3:  // 30 Hz Modes and Octaves
+                    vibChart.Titles.Clear();
+                    vibChart.Series["octoBins"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+                    vibChart.Titles.Add("30 Hz Modes & Octaves");
                     break;
-                case 4:
-                    System.Diagnostics.Debug.WriteLine("FFT");
-                    vibChart.Series["Series1"].Points.Dispose();
+                case 4:  // FFT
+                    vibChart.Series.Add("FFT");
+                    vibChart.Series["FFT"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
                     vibChart.Titles.Clear();
                     vibChart.Titles.Add("Frequency Spectrum");
-                    selectedChart = 0;
-                    for (int i = 0; i < 128; i++)
-                        vibChart.Series["Series1"].Points.AddXY(i,0);
+                    
                     break;
-                case 5:
-                    System.Diagnostics.Debug.WriteLine("Waterfall");
+                case 5:  // Waterfall
                     break;
-                case 6:
-                    System.Diagnostics.Debug.WriteLine("FFT & Waterfall");
+                case 6:  // FFT and Waterfall
                     break;
                 default:
                     break;
@@ -395,44 +449,52 @@ namespace GPM_MQTTClient2
 
         private void cbAxis_SelectedIndexChanged(object sender, EventArgs e)
         {
-            client.Publish("Test/DataAnalysis/Vibration/" + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp88," + cbAxis.SelectedIndex.ToString() + "\"}"));
+            if (!guiUpdate)
+                client.Publish(devices[idev].topic.Substring(0,devices[idev].topic.LastIndexOf('/')+1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp88," + cbAxis.SelectedIndex.ToString() + "\"}"));
         }
 
         private void cbScale_SelectedIndexChanged(object sender, EventArgs e)
         {
             int scale = (int)(1000.0 * Convert.ToDouble(cbScale.Text));
-            client.Publish("Test/DataAnalysis/Vibration/" + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp80," + scale.ToString() + "\"}"));
+            if (!guiUpdate)
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp80," + scale.ToString() + "\"}"));
         }
 
         private void cbDSamp_SelectedIndexChanged(object sender, EventArgs e)
         {
-            client.Publish("Test/DataAnalysis/Vibration/" + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp85," + cbDSamp.SelectedIndex.ToString() + "\"}"));
+            if (!guiUpdate)
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp85," + cbDSamp.SelectedIndex.ToString() + "\"}"));
         }
 
         private void cbRate_SelectedIndexChanged(object sender, EventArgs e)
         {
-            client.Publish("Test/DataAnalysis/Vibration/" + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp88," + (cbRate.SelectedIndex+1).ToString() + "\"}"));
+            if (!guiUpdate)
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp88," + (cbRate.SelectedIndex+1).ToString() + "\"}"));
         }
 
         private void cbSamples_SelectedIndexChanged(object sender, EventArgs e)
         {
-            client.Publish("Test/DataAnalysis/Vibration/" + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp84," + (1024*(cbSamples.SelectedIndex+1)).ToString() + "\"}"));
+            if (!guiUpdate)
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp84," + (1024*(cbSamples.SelectedIndex+1)).ToString() + "\"}"));
         }
 
         private void cbFmt_SelectedIndexChanged(object sender, EventArgs e)
         {
-            client.Publish("Test/DataAnalysis/Vibration/" + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"wf53," + (cbFmt.SelectedIndex+2).ToString() + "\"}"));
+            if (!guiUpdate)
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"wf53," + (cbFmt.SelectedIndex+2).ToString() + "\"}"));
         }
 
         private void cbWindow_SelectedIndexChanged(object sender, EventArgs e)
         {
-            client.Publish("Test/DataAnalysis/Vibration/" + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp83," + cbWindow.SelectedIndex.ToString() + "\"}"));
+            if (!guiUpdate)
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp83," + cbWindow.SelectedIndex.ToString() + "\"}"));
         }
 
         private void cbInterval_SelectedIndexChanged(object sender, EventArgs e)
         {
             int iv = (int)(1000.0 * Convert.ToDouble(cbInterval.Text));
-            client.Publish("Test/DataAnalysis/Vibration/" + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp95," + iv.ToString() + "\"}"));
+            if (!guiUpdate)
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp95," + iv.ToString() + "\"}"));
         }
 
         private void VibManager_FormClosed(object sender, FormClosedEventArgs e)
@@ -448,9 +510,10 @@ namespace GPM_MQTTClient2
         {
             string dev = cbDevices.Text;
 
-            int idev = devices.FindIndex(x => x.name == dev);
+            idev = devices.FindIndex(x => x.name == dev);
             if (idev >= 0)
             {
+                guiUpdate = true;
                 lblFirmware.Text = "Firmware: " + devices[idev].firmware;
                 lblIP.Text = "IP Address: " + devices[idev].ip;
                 cbAxis.SelectedIndex = devices[idev].axes   ;
@@ -459,13 +522,13 @@ namespace GPM_MQTTClient2
                 cbScale.Text = devices[idev].scale.ToString();
                 cbInterval.Text = devices[idev].interval.ToString();
                 cbDSamp.Text = devices[idev].pnts.ToString();
-
-                vibChart.Series["Series1"].Points.Clear();
-                foreach (double rms in devices[idev].rms)
-                    vibChart.Series["Series1"].Points.AddY(rms);
+                guiUpdate = false;
+                string currentchart = cbChart.Text;
+                cbChart.Text = currentchart;
             }
             else
             {
+                guiUpdate = true;
                 lblFirmware.Text = "Firmware: ";
                 lblIP.Text = "IP Address: ";
                 cbAxis.SelectedIndex = 0;
@@ -474,7 +537,36 @@ namespace GPM_MQTTClient2
                 cbScale.Text = "";
                 cbInterval.Text = "";
                 cbDSamp.Text = "";
-                vibChart.Series["Series1"].Points.Clear();
+                guiUpdate = false;
+            }
+        }
+
+        private void cbTopics_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            
+        }
+
+
+        private void butReset_Click(object sender, EventArgs e)
+        {
+            if (!guiUpdate)
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"rs0\"}"));
+        }
+
+        private void butUpdate_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                //openFileDialog.InitialDirectory = "c:\\";
+                openFileDialog.Filter = "firmware files (*.bin)|*.bin|All files (*.*)|*.*";
+                openFileDialog.FilterIndex = 1;
+                openFileDialog.RestoreDirectory = true;
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    // call Firmware Upgrade with 
+                    System.Diagnostics.Process.Start("CMD.exe", "GPM_UpdateLite.exe " + devices[idev].ip + " " + openFileDialog.FileName);
+                }
             }
         }
     }

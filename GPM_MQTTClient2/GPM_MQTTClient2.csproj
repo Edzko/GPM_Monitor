@@ -34,7 +34,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>MagnaIcon.ico</ApplicationIcon>
+    <ApplicationIcon>Magna.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="M2Mqtt.Net">
@@ -93,6 +93,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Magna.ico" />
     <Content Include="MagnaIcon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

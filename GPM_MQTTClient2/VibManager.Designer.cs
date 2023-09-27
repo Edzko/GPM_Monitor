@@ -30,8 +30,8 @@ namespace GPM_MQTTClient2
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.cbDevices = new System.Windows.Forms.ComboBox();
             this.cbTopics = new System.Windows.Forms.ComboBox();
@@ -57,6 +57,7 @@ namespace GPM_MQTTClient2
             this.label13 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.cbChart = new System.Windows.Forms.ComboBox();
+            this.cbDSamp = new System.Windows.Forms.ComboBox();
             this.cbScale = new System.Windows.Forms.ComboBox();
             this.cbSamples = new System.Windows.Forms.ComboBox();
             this.cbAxis = new System.Windows.Forms.ComboBox();
@@ -64,7 +65,8 @@ namespace GPM_MQTTClient2
             this.cbInterval = new System.Windows.Forms.ComboBox();
             this.cbWindow = new System.Windows.Forms.ComboBox();
             this.cbFmt = new System.Windows.Forms.ComboBox();
-            this.button1 = new System.Windows.Forms.Button();
+            this.butUpdate = new System.Windows.Forms.Button();
+            this.butReset = new System.Windows.Forms.Button();
             this.lblTime = new System.Windows.Forms.Label();
             this.lblFirmware = new System.Windows.Forms.Label();
             this.txtRMS = new System.Windows.Forms.TextBox();
@@ -75,8 +77,6 @@ namespace GPM_MQTTClient2
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.vibChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.butUpdate = new System.Windows.Forms.Button();
-            this.cbDSamp = new System.Windows.Forms.ComboBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -126,6 +126,7 @@ namespace GPM_MQTTClient2
             this.cbTopics.Size = new System.Drawing.Size(352, 25);
             this.cbTopics.TabIndex = 3;
             this.toolTip1.SetToolTip(this.cbTopics, "Current topic");
+            this.cbTopics.SelectedIndexChanged += new System.EventHandler(this.cbTopics_SelectedIndexChanged);
             // 
             // butConnect
             // 
@@ -238,7 +239,7 @@ namespace GPM_MQTTClient2
             this.groupBox2.Controls.Add(this.cbWindow);
             this.groupBox2.Controls.Add(this.cbFmt);
             this.groupBox2.Controls.Add(this.butUpdate);
-            this.groupBox2.Controls.Add(this.button1);
+            this.groupBox2.Controls.Add(this.butReset);
             this.groupBox2.Controls.Add(this.lblTime);
             this.groupBox2.Controls.Add(this.lblFirmware);
             this.groupBox2.Controls.Add(this.txtRMS);
@@ -368,6 +369,26 @@ namespace GPM_MQTTClient2
             this.cbChart.Size = new System.Drawing.Size(140, 25);
             this.cbChart.TabIndex = 3;
             this.cbChart.SelectedIndexChanged += new System.EventHandler(this.chChart_SelectedIndexChanged);
+            // 
+            // cbDSamp
+            // 
+            this.cbDSamp.FormattingEnabled = true;
+            this.cbDSamp.Items.AddRange(new object[] {
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8"});
+            this.cbDSamp.Location = new System.Drawing.Point(99, 172);
+            this.cbDSamp.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.cbDSamp.Name = "cbDSamp";
+            this.cbDSamp.Size = new System.Drawing.Size(105, 25);
+            this.cbDSamp.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.cbDSamp, "Down sampling factor");
+            this.cbDSamp.SelectedIndexChanged += new System.EventHandler(this.cbDSamp_SelectedIndexChanged);
             // 
             // cbScale
             // 
@@ -499,16 +520,29 @@ namespace GPM_MQTTClient2
             this.toolTip1.SetToolTip(this.cbFmt, "Select the MQTT Message Type");
             this.cbFmt.SelectedIndexChanged += new System.EventHandler(this.cbFmt_SelectedIndexChanged);
             // 
-            // button1
+            // butUpdate
             // 
-            this.button1.Location = new System.Drawing.Point(593, 233);
-            this.button1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(87, 30);
-            this.button1.TabIndex = 2;
-            this.button1.Text = "Reset";
-            this.toolTip1.SetToolTip(this.button1, "Reset the device");
-            this.button1.UseVisualStyleBackColor = true;
+            this.butUpdate.Location = new System.Drawing.Point(500, 233);
+            this.butUpdate.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.butUpdate.Name = "butUpdate";
+            this.butUpdate.Size = new System.Drawing.Size(87, 30);
+            this.butUpdate.TabIndex = 2;
+            this.butUpdate.Text = "Update";
+            this.toolTip1.SetToolTip(this.butUpdate, "Update firmware");
+            this.butUpdate.UseVisualStyleBackColor = true;
+            this.butUpdate.Click += new System.EventHandler(this.butUpdate_Click);
+            // 
+            // butReset
+            // 
+            this.butReset.Location = new System.Drawing.Point(593, 233);
+            this.butReset.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.butReset.Name = "butReset";
+            this.butReset.Size = new System.Drawing.Size(87, 30);
+            this.butReset.TabIndex = 2;
+            this.butReset.Text = "Reset";
+            this.toolTip1.SetToolTip(this.butReset, "Reset the device");
+            this.butReset.UseVisualStyleBackColor = true;
+            this.butReset.Click += new System.EventHandler(this.butReset_Click);
             // 
             // lblTime
             // 
@@ -595,48 +629,17 @@ namespace GPM_MQTTClient2
             // 
             // vibChart
             // 
-            chartArea1.Name = "ChartArea1";
-            this.vibChart.ChartAreas.Add(chartArea1);
+            chartArea2.Name = "ChartArea1";
+            this.vibChart.ChartAreas.Add(chartArea2);
             this.vibChart.Location = new System.Drawing.Point(7, 25);
             this.vibChart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.vibChart.Name = "vibChart";
-            series1.ChartArea = "ChartArea1";
-            series1.Name = "Series1";
-            this.vibChart.Series.Add(series1);
+            series2.ChartArea = "ChartArea1";
+            series2.Name = "Series1";
+            this.vibChart.Series.Add(series2);
             this.vibChart.Size = new System.Drawing.Size(673, 269);
             this.vibChart.TabIndex = 0;
             this.vibChart.Text = "vibChart";
-            // 
-            // butUpdate
-            // 
-            this.butUpdate.Location = new System.Drawing.Point(500, 233);
-            this.butUpdate.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.butUpdate.Name = "butUpdate";
-            this.butUpdate.Size = new System.Drawing.Size(87, 30);
-            this.butUpdate.TabIndex = 2;
-            this.butUpdate.Text = "Update";
-            this.toolTip1.SetToolTip(this.butUpdate, "Update firmware");
-            this.butUpdate.UseVisualStyleBackColor = true;
-            // 
-            // cbDSamp
-            // 
-            this.cbDSamp.FormattingEnabled = true;
-            this.cbDSamp.Items.AddRange(new object[] {
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8"});
-            this.cbDSamp.Location = new System.Drawing.Point(99, 172);
-            this.cbDSamp.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.cbDSamp.Name = "cbDSamp";
-            this.cbDSamp.Size = new System.Drawing.Size(105, 25);
-            this.cbDSamp.TabIndex = 3;
-            this.toolTip1.SetToolTip(this.cbDSamp, "Down sampling factor");
-            this.cbDSamp.SelectedIndexChanged += new System.EventHandler(this.cbDSamp_SelectedIndexChanged);
             // 
             // VibManager
             // 
@@ -690,7 +693,7 @@ namespace GPM_MQTTClient2
         private System.Windows.Forms.ComboBox cbInterval;
         private System.Windows.Forms.ComboBox cbWindow;
         private System.Windows.Forms.ComboBox cbFmt;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button butReset;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Label label9;
