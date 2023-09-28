@@ -1,0 +1,21 @@
+[OPTIONS]
+Auto Index=Yes
+Compatibility=1.1 or later
+Compiled file=GPM_MQTTClient2.chm
+Contents file=GPM_MQTTClient2.hhc
+Index file=GPM_MQTTClient2.hhk
+Default topic=mqttclient_intro.HTM
+Display compile progress=No
+Full-text search=Yes
+Language=0x0409 English (United States)
+
+[FILES]
+mqttclient_intro.HTM
+
+[ALIAS]
+
+[MAP]
+
+[TEXT POPUPS]
+
+[INFOTYPES]

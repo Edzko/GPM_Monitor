@@ -14,12 +14,22 @@ using System.Windows.Forms.DataVisualization.Charting;
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
 
+/// <summary>
+/// GPM_MQTTClient defines a Client Application to an MQTT broker for managing vibration 
+/// data acquisition devices.
+/// </summary>
 namespace GPM_MQTTClient2
 {
+    /// <summary>
+    /// class definition for the Main Application form
+    /// </summary>
     public partial class VibManager : Form
     {
+        /// <summary>MQTT security access token</summary>
         public static String access_token = "no valid token received yet.";
+        /// <summary>MQTT client instance</summary>
         public static MqttClient client;
+        /// <summary>MQTT Client access unique identifier</summary>
         public static string clientId;
         internal bool guiUpdate = false;
         internal int idev = 0;
@@ -50,6 +60,9 @@ namespace GPM_MQTTClient2
         }
         internal List<DeviceData> devices = new List<DeviceData>();
 
+        /// <summary>
+        /// Initialization call for the Main User Interface form
+        /// </summary>
         public VibManager()
         {
             InitializeComponent();
@@ -101,7 +114,13 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void addDevice(string topic, string dev)
+        /// <summary>
+        /// When a message is received from the MQTT broker this function is called.
+        /// It registers the topic and device with the Application database.
+        /// </summary>
+        /// <param name="topic">full topic string of the received message</param>
+        /// <param name="dev">device name as registered in the message under the property "device".</param>
+        public void addDevice(string topic, string dev)
         {
 
             // Add the current device to the global Devices list
@@ -578,51 +597,83 @@ namespace GPM_MQTTClient2
         private void cbAxis_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
-                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp88," + cbAxis.SelectedIndex.ToString() + "\"}"));
+            {
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, 
+                    Encoding.UTF8.GetBytes("{\"cmd\":\"sp88," + cbAxis.SelectedIndex.ToString() + "\"}"));
+                devices[idev].axes = cbAxis.SelectedIndex;
+            }
         }
 
         private void cbScale_SelectedIndexChanged(object sender, EventArgs e)
         {
             int scale = (int)(1000.0 * Convert.ToDouble(cbScale.Text));
             if (!guiUpdate)
-                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp80," + scale.ToString() + "\"}"));
+            {
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text,
+                      Encoding.UTF8.GetBytes("{\"cmd\":\"sp80," + scale.ToString() + "\"}"));
+                devices[idev].scale = scale;
+            }
         }
 
         private void cbDSamp_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
-                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp85," + cbDSamp.SelectedIndex.ToString() + "\"}"));
+            {
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text,
+                    Encoding.UTF8.GetBytes("{\"cmd\":\"sp85," + (cbDSamp.SelectedIndex + 1).ToString() + "\"}"));
+                devices[idev].samples = cbSamples.SelectedIndex + 1;
+            }
         }
 
         private void cbRate_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
-                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp88," + (cbRate.SelectedIndex + 1).ToString() + "\"}"));
+            {
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text,
+                    Encoding.UTF8.GetBytes("{\"cmd\":\"sp88," + (cbRate.SelectedIndex + 1).ToString() + "\"}"));
+                devices[idev].rate = cbRate.SelectedIndex + 1;
+            }
         }
 
         private void cbSamples_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
-                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp84," + (1024 * (cbSamples.SelectedIndex + 1)).ToString() + "\"}"));
+            {
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text,
+                    Encoding.UTF8.GetBytes("{\"cmd\":\"sp84," + (1024 * (cbSamples.SelectedIndex + 1)).ToString() + "\"}"));
+                devices[idev].pnts = 1024 * (cbSamples.SelectedIndex + 1);
+            }
         }
 
         private void cbFmt_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
-                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"wf53," + (cbFmt.SelectedIndex + 2).ToString() + "\"}"));
+            {
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text,
+                    Encoding.UTF8.GetBytes("{\"cmd\":\"wf53," + (cbFmt.SelectedIndex + 2).ToString() + "\"}"));
+                //devices[idev].
+            }
         }
 
         private void cbWindow_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
-                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp83," + cbWindow.SelectedIndex.ToString() + "\"}"));
+            {
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text,
+                    Encoding.UTF8.GetBytes("{\"cmd\":\"sp83," + cbWindow.SelectedIndex.ToString() + "\"}"));
+                devices[idev].window = cbWindow.SelectedIndex;
+            }
         }
 
         private void cbInterval_SelectedIndexChanged(object sender, EventArgs e)
         {
             int iv = (int)(1000.0 * Convert.ToDouble(cbInterval.Text));
             if (!guiUpdate)
-                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text, Encoding.UTF8.GetBytes("{\"cmd\":\"sp95," + iv.ToString() + "\"}"));
+            {
+                client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text,
+                    Encoding.UTF8.GetBytes("{\"cmd\":\"sp95," + iv.ToString() + "\"}"));
+                devices[idev].interval = iv;
+            }
         }
 
         private void VibManager_FormClosed(object sender, FormClosedEventArgs e)

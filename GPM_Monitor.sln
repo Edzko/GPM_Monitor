@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GPM_MQTTClient2", "GPM_MQTT
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "GPM_Install", "GPM_Install\GPM_Install.vdproj", "{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}"
 EndProject
+Project("{7CF6DF6D-3B04-46F8-A40B-537D21BCA0B4}") = "MQTTClient", "GPM_MQTTClient2\MQTTClient.shfbproj", "{3B49A274-A850-4B65-8562-44EBA148687D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +113,18 @@ Global
 		{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}.Release|Any CPU.ActiveCfg = Release
 		{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}.Release|x64.ActiveCfg = Release
 		{8E2AD8E5-CC5D-46E6-8CF0-33AFD0E902A1}.Release|x86.ActiveCfg = Release
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Debug|x64.Build.0 = Debug|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Debug|x86.Build.0 = Debug|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Release|x64.ActiveCfg = Release|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Release|x64.Build.0 = Release|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Release|x86.ActiveCfg = Release|Any CPU
+		{3B49A274-A850-4B65-8562-44EBA148687D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
