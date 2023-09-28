@@ -17,6 +17,9 @@ namespace GPM_MQTTClient2.Properties {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
         
+        /// <summary>
+        /// Application settings properties.
+        /// </summary>
         public static Settings Default {
             get {
                 return defaultInstance;

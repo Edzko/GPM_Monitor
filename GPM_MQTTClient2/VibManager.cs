@@ -3,8 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -35,8 +38,12 @@ namespace GPM_MQTTClient2
         internal int idev = 0;
 
         List<string> topiclist = new List<string>();
-        List<string> devicelist = new List<string>();
         RegistryKey key;
+
+        const string userRoot = "HKEY_CURRENT_USER";
+        const string subkey = "Software\\Magna\\MQTTClient";
+        const string keyName = userRoot + "\\" + subkey;
+
         internal class DeviceData
         {
             internal string name;
@@ -60,12 +67,50 @@ namespace GPM_MQTTClient2
         }
         internal List<DeviceData> devices = new List<DeviceData>();
 
+        // ID for the About item on the system menu
+        private int SYSMENU_ABOUT_ID = 0x1;
+        private int SYSMENU_LOGFILE_ID = 0x2;
+        private int SYSMENU_UPDATE_ID = 0x3;
+
+        /// <summary>
+        /// String value for the complete path and file name for the log file.
+        /// </summary>
+        public string logFileName;
+
+        /// <summary>
+        /// Bitmap object that is used as canvas for the charts
+        /// </summary>
+        public Bitmap chartImg;
+        private const int WM_SYSCOMMAND = 0x112;
+        private const int MF_STRING = 0x0;
+        private const int MF_SEPARATOR = 0x800;
+        private const int MF_CHECKED = 0x008;
+
+        // P/Invoke declarations
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool AppendMenu(IntPtr hMenu, int uFlags, int uIDNewItem, string lpNewItem);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool InsertMenu(IntPtr hMenu, int uPosition, int uFlags, int uIDNewItem, string lpNewItem);
+
+
+
         /// <summary>
         /// Initialization call for the Main User Interface form
         /// </summary>
         public VibManager()
         {
             InitializeComponent();
+            
+            VersionInfo myInfo = new VersionInfo();
+
+            //AboutBox about = new AboutBox();
+            //about.Show();
+            //about.Update();
+            //System.Threading.Thread.Sleep(100);
 
             client = new MqttClient(txtHost.Text, Convert.ToInt32(txtPort.Text), false, MqttSslProtocols.SSLv3, null, null);
             // register a callback-function (we have to implement, see below) which is called by the library when a message was received
@@ -83,7 +128,78 @@ namespace GPM_MQTTClient2
             txtPassword.Text = (String)key.GetValue("Password", "user12345");
         }
 
-        private void butConnect_Click(object sender, EventArgs e)
+        /// <summary>
+        /// System Override to add the "About" command to the system menu
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+
+            // Get a handle to a copy of this form's system (window) menu
+            IntPtr hSysMenu = GetSystemMenu(this.Handle, false);
+
+            // Add a separator
+            AppendMenu(hSysMenu, MF_SEPARATOR, 0, string.Empty);
+
+            // Add the About menu item
+            AppendMenu(hSysMenu, MF_STRING, SYSMENU_LOGFILE_ID, "&Log File");
+            int AutoUpdate = (int)Registry.GetValue(keyName, "AutoUpdate", 1);
+            if (AutoUpdate == 1)
+                AppendMenu(hSysMenu, MF_STRING | MF_CHECKED, SYSMENU_UPDATE_ID, "Check &Update");
+            else
+                AppendMenu(hSysMenu, MF_STRING, SYSMENU_UPDATE_ID, "Check &Update");
+            AppendMenu(hSysMenu, MF_STRING, SYSMENU_ABOUT_ID, "&About…");
+        }
+
+        /// <summary>
+        /// System override to catch About Box Command message
+        /// </summary>
+        /// <param name="m"></param>
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+
+            // Test if the About item was selected from the system menu
+            if (m.Msg == WM_SYSCOMMAND)
+            {
+                if ((int)m.WParam == SYSMENU_ABOUT_ID)
+                {
+                    AboutBox pAbout = new AboutBox();
+                    pAbout.ShowDialog();
+                }
+                if ((int)m.WParam == SYSMENU_LOGFILE_ID)
+                {
+                    Process.Start(logFileName);
+                }
+                if ((int)m.WParam == SYSMENU_UPDATE_ID)
+                {
+                    int AutoUpdate = (int)Registry.GetValue(keyName, "AutoUpdate", 1);
+                    AutoUpdate = 1 - AutoUpdate;
+                    Registry.SetValue(keyName, "AutoUpdate", AutoUpdate, RegistryValueKind.DWord);
+
+                    //UpdatePtcm();
+                }
+            }
+        }
+        /// <summary>
+        /// Internal Function call to request the current Application's version information
+        /// </summary>
+        public string AssemblyVersion
+        {
+            get
+            {
+                return Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Callback function for the Connect/Disconnect Button.
+        /// This function will create a connection to a MQTT broker as specified in the GUI.
+        /// </summary>
+        /// <param name="sender">Button object</param>
+        /// <param name="e">Button click arguments</param>
+        public void butConnect_Click(object sender, EventArgs e)
         {
             if (client.IsConnected)
             {
@@ -91,7 +207,7 @@ namespace GPM_MQTTClient2
                 butConnect.Text = "Connect";
 
                 topiclist.Clear();
-                devicelist.Clear();
+                devices.Clear();
                 cbTopics.Items.Clear();
                 cbDevices.Items.Clear();
                 txtRMS.Text = "";
@@ -124,7 +240,8 @@ namespace GPM_MQTTClient2
         {
 
             // Add the current device to the global Devices list
-            if (devicelist.IndexOf(dev) == -1)
+            int idev = devices.FindIndex(x => x.name == dev);
+            if (idev == -1)
             {
                 DeviceData dd = new DeviceData();
                 dd.name = dev;
@@ -136,9 +253,8 @@ namespace GPM_MQTTClient2
                 dd.FFToct = new double[7];
                 dd.FFTvalues = new double[100, 128];
                 devices.Add(dd);
-                devicelist.Add(dev);
                 cbDevices.Items.Add(dev);
-                if (devicelist.Count == 1) cbDevices.Text = dev;
+                if (devices.Count == 1) cbDevices.Text = dev;
 
                 // request parameters
                 int it = topic.LastIndexOf('/');
@@ -150,7 +266,16 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void updateDev(string dev, double rms, string time)
+        /// <summary>
+        /// The function is called when a device message is received by the Client from the MQTT broker.
+        /// The RMS and RMStime arrays are updated with the current value.
+        /// If the device is selected in the GUI, then also the GUI values for the timestamp and RMS are updated.
+        /// If the RMS chart is selected, then the chart is also updated.
+        /// </summary>
+        /// <param name="dev"></param>
+        /// <param name="rms"></param>
+        /// <param name="time"></param>
+        public void updateDev(string dev, double rms, string time)
         {
             DateTime rmstime = DateTime.Parse(time);
             int idev = devices.FindIndex(x => x.name == dev);
@@ -191,6 +316,22 @@ namespace GPM_MQTTClient2
             }
             catch (Exception) { }
         }
+
+        /// <summary>
+        /// The function is called when a device settings message is received by the Client from the MQTT broker.
+        /// The local settings information for the device are updated.
+        /// If the device is selected in the Devices list, then also the various GUI controls for the settings are updated.
+        /// </summary>
+        /// <param name="dev">Device name</param>
+        /// <param name="fw">Device firmware version</param>
+        /// <param name="ip">Current Device IP address on it's local WiFi network. This may not be the same address as the MQTT broker recognizes.</param>
+        /// <param name="scale">Scaling factor for the FFT data</param>
+        /// <param name="window">FFT Windowing function</param>
+        /// <param name="axis">IMU axis selected for acquisition</param>
+        /// <param name="rate">Acquisition rage in kHz</param>
+        /// <param name="samples">Down sampling factor from the direct FFT data to the 128 capture bins</param>
+        /// <param name="interval">MQTT message interval rate in ms</param>
+        /// <param name="pnts">Number of samples to capture per batch. This should be a power of 2, for effective FFT </param>
         private void updateSettings(string dev, string fw, string ip, double scale, int window, int axis, int rate, int samples, int interval, int pnts)
         {
             int idev = devices.FindIndex(x => x.name == dev);
@@ -706,6 +847,8 @@ namespace GPM_MQTTClient2
                 guiUpdate = false;
                 rtxtConsole.Text = "";
                 cbTopics.Text = devices[idev].topic;
+                if (cbChart.Text == "")
+                    cbChart.Text = cbChart.Items[0].ToString();
                 UpdateChartType();
             }
             else

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("GPM_MQTTClient2")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("GPM_MQTTClient")]
+[assembly: AssemblyDescription("Vibration DataAnalysis Device Manager")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("GPM_MQTTClient2")]
+[assembly: AssemblyCompany("Magna International")]
+[assembly: AssemblyProduct("MQTT Device Manager Client")]
 [assembly: AssemblyCopyright("Copyright ©  2023")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

@@ -30,8 +30,8 @@ namespace GPM_MQTTClient2
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.chkEncryption = new System.Windows.Forms.CheckBox();
             this.chkCertificate = new System.Windows.Forms.CheckBox();
@@ -648,6 +648,7 @@ namespace GPM_MQTTClient2
             // 
             // rtxtConsole
             // 
+            this.rtxtConsole.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rtxtConsole.Location = new System.Drawing.Point(6, 68);
             this.rtxtConsole.Name = "rtxtConsole";
             this.rtxtConsole.Size = new System.Drawing.Size(449, 363);
@@ -669,14 +670,14 @@ namespace GPM_MQTTClient2
             // 
             // vibChart
             // 
-            chartArea2.Name = "ChartArea1";
-            this.vibChart.ChartAreas.Add(chartArea2);
+            chartArea1.Name = "ChartArea1";
+            this.vibChart.ChartAreas.Add(chartArea1);
             this.vibChart.Location = new System.Drawing.Point(7, 25);
             this.vibChart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.vibChart.Name = "vibChart";
-            series2.ChartArea = "ChartArea1";
-            series2.Name = "Series1";
-            this.vibChart.Series.Add(series2);
+            series1.ChartArea = "ChartArea1";
+            series1.Name = "Series1";
+            this.vibChart.Series.Add(series1);
             this.vibChart.Size = new System.Drawing.Size(673, 405);
             this.vibChart.TabIndex = 0;
             this.vibChart.Text = "vibChart";
