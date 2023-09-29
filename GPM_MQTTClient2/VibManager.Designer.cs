@@ -390,8 +390,9 @@ namespace GPM_MQTTClient2
             "30 Hz Octaves (fmt 3)",
             "Modes & Octaves (fmt 3)",
             "FFT (fmt 4)",
-            "Waterfall (fmt 4)",
-            "FFT & Waterfall (fmt 4)"});
+            "Spectrograph (fmt 4)",
+            "FFT & Spectrograph (fmt 4)",
+            "FFT Surface (fmt 4)"});
             this.cbChart.Location = new System.Drawing.Point(113, 237);
             this.cbChart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbChart.Name = "cbChart";
@@ -676,6 +677,7 @@ namespace GPM_MQTTClient2
             this.vibChart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.vibChart.Name = "vibChart";
             series1.ChartArea = "ChartArea1";
+            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
             series1.Name = "Series1";
             this.vibChart.Series.Add(series1);
             this.vibChart.Size = new System.Drawing.Size(673, 405);

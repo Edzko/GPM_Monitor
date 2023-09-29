@@ -114,4 +114,7 @@
   <PropertyGroup>
     <PreBuildEvent>$(ProjectDir)UpdateBuild.bat</PreBuildEvent>
   </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>copy $(TargetName)$(TargetExt) c:\projects\gps\ublox\gpm_monitor\Debug</PostBuildEvent>
+  </PropertyGroup>
 </Project>

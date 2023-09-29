@@ -388,7 +388,6 @@ namespace GPM_MQTTClient2
                     {
                         vibChart.Series["FFT"].Points.AddXY(i * fmax / 128, values[i]);
                     }
-                    vibChart.ChartAreas["fftChart"].AxisX.Minimum = 0;
                     vibChart.ChartAreas["fftChart"].AxisX.Maximum = fmax;
                     vibChart.ChartAreas["fftChart"].AxisX.Interval = 25;
                     vibChart.Update();
@@ -413,9 +412,36 @@ namespace GPM_MQTTClient2
                         }
                     }
 
-                    vibChart.ChartAreas["wfChart"].AxisX.Minimum = 0;
                     vibChart.ChartAreas["wfChart"].AxisX.Maximum = fmax;
                     vibChart.ChartAreas["wfChart"].AxisX.Interval = 25;
+                    vibChart.Update();
+                }
+                if ((dev == cbDevices.Text) && (cbChart.SelectedIndex == 7))
+                {
+                    vibChart.Series.Clear();
+                    for (int k = 0; k < 100; k++)
+                    {
+                        //string fftname = "FFT" + k.ToString();
+                        Series fft = new Series();
+                        fft.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+                        for (int i = 0; i < 128; i++)
+                        {
+                            DataPoint p = new DataPoint(i * fmax / 128, (int)devices[idev].FFTvalues[k, i]);
+                            int red = 128 + (int)devices[idev].FFTvalues[k, i] * 5;
+                            if (red > 255) red = 255; else if (red < 0) red = 0;
+                            int green = 128 + (int)devices[idev].FFTvalues[k, i] - 20;
+                            if (green > 255) green = 255; else if (green < 0) green = 0;
+                            int blue = 128 + (int)devices[idev].FFTvalues[k, i] - 50;
+                            if (blue > 255) blue = 255; else if (blue < 0) blue = 0;
+                            p.Color = Color.FromArgb(red, green, blue);
+
+                            fft.Points.Add(p);
+                        }
+                        vibChart.Series.Add(fft);
+                    }
+
+                    vibChart.ChartAreas["surfChart"].AxisX.Maximum = fmax;
+                    vibChart.ChartAreas["surfChart"].AxisX.Interval = 25;
                     vibChart.Update();
                 }
             }
@@ -451,9 +477,7 @@ namespace GPM_MQTTClient2
                             p.MarkerColor = Color.Red;
                             vibChart.Series["modeBins"].Points.Add(p);
                         }
-                        vibChart.ChartAreas["modeChart"].AxisX.Minimum = 30;
-                        vibChart.ChartAreas["modeChart"].AxisX.Maximum = 210;
-                        vibChart.ChartAreas["modeChart"].AxisX.Interval = 30;
+                        
                         vibChart.Update();
                     }
                     if ((cbChart.SelectedIndex == 2) || (cbChart.SelectedIndex == 3))
@@ -470,10 +494,7 @@ namespace GPM_MQTTClient2
                             vibChart.Series["octoBins"].Points.Add(p);
                         }
 
-                        //vibChart.Series["octoBins"].AxisLabel()
-                        vibChart.ChartAreas["octoChart"].AxisX.Minimum = 0;
-                        vibChart.ChartAreas["octoChart"].AxisX.Maximum = 650;
-                        vibChart.ChartAreas["octoChart"].AxisX.Interval = 50;
+                        
 
                         // https://stackoverflow.com/questions/44352528/chart-x-axis-numbering
                         //vibChart.ResetAutoValues();
@@ -661,6 +682,7 @@ namespace GPM_MQTTClient2
                         vibChart.Series["RMS"].Points.AddXY(devices[idev].rmstime[i], devices[idev].rms[i]);
                     }
                     vibChart.Series["RMS"].XValueType = ChartValueType.DateTime;
+                    vibChart.Series["RMS"].Color = Color.Red;
                     vibChart.ChartAreas["chart"].AxisX.LabelStyle.Format = "hh:mm:ss";
                     //vibChart.ChartAreas["chart"].AxisX.Interval = 1;
                     vibChart.ChartAreas["chart"].AxisX.IntervalType = DateTimeIntervalType.Seconds;
@@ -673,38 +695,58 @@ namespace GPM_MQTTClient2
                     vibChart.Series["modeBins"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
                     vibChart.Titles.Clear();
                     vibChart.Titles.Add("30 Hz Modes");
+                    vibChart.ChartAreas["modeChart"].AxisX.Title = "Frequency [Hz]";
+                    vibChart.ChartAreas["modeChart"].AxisX.Minimum = 30;
+                    vibChart.ChartAreas["modeChart"].AxisX.Maximum = 210;
+                    vibChart.ChartAreas["modeChart"].AxisX.Interval = 30;
                     break;
                 case 2:  // 30 Hz Octaves
                     vibChart.ChartAreas.Add("octoChart");
                     vibChart.Series.Add("octoBins");
                     vibChart.Series["octoBins"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
                     vibChart.Titles.Add("30 Hz Octaves");
+                    vibChart.ChartAreas["octoChart"].AxisX.Title = "Frequency [Hz]";
 
                     vibChart.ChartAreas["octoChart"].AxisX.Minimum = 0;  // optional
                     vibChart.ChartAreas["octoChart"].AxisX.MajorGrid.Enabled = false;
                     vibChart.ChartAreas["octoChart"].AxisX.MajorTickMark.Enabled = false;
                     vibChart.ChartAreas["octoChart"].AxisX.LabelStyle.Enabled = false;
+                    //vibChart.Series["octoBins"].AxisLabel()
+                    vibChart.ChartAreas["octoChart"].AxisX.Minimum = 0;
+                    vibChart.ChartAreas["octoChart"].AxisX.Maximum = 650;
+                    vibChart.ChartAreas["octoChart"].AxisX.Interval = 50;
                     break;
                 case 3:  // 30 Hz Modes and Octaves
                     vibChart.ChartAreas.Add("modeChart");
                     vibChart.Series.Add("modeBins");
                     vibChart.Series["modeBins"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
                     ChartArea octochart = vibChart.ChartAreas.Add("octoChart");
+                    vibChart.ChartAreas["modeChart"].AxisX.Minimum = 30;
+                    vibChart.ChartAreas["modeChart"].AxisX.Maximum = 210;
+                    vibChart.ChartAreas["modeChart"].AxisX.Interval = 30;
+
                     Series octoseries = new Series("octoBins");
                     octoseries.ChartArea = "octoChart";
                     vibChart.Series.Add(octoseries);
                     vibChart.Series["octoBins"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
                     vibChart.Titles.Add("30 Hz Modes & Octaves");
+                    vibChart.ChartAreas["octoChart"].AxisX.Title = "Frequency [Hz]";
                     vibChart.ChartAreas["octoChart"].AxisX.Minimum = 0;  // optional
                     vibChart.ChartAreas["octoChart"].AxisX.MajorGrid.Enabled = false;
                     vibChart.ChartAreas["octoChart"].AxisX.MajorTickMark.Enabled = false;
                     vibChart.ChartAreas["octoChart"].AxisX.LabelStyle.Enabled = false;
+                    //vibChart.Series["octoBins"].AxisLabel()
+                    vibChart.ChartAreas["octoChart"].AxisX.Minimum = 0;
+                    vibChart.ChartAreas["octoChart"].AxisX.Maximum = 650;
+                    vibChart.ChartAreas["octoChart"].AxisX.Interval = 50;
                     break;
                 case 4:  // FFT
                     vibChart.ChartAreas.Add("fftChart");
                     vibChart.Series.Add("FFT");
                     vibChart.Series["FFT"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
                     vibChart.Titles.Add("Frequency Spectrum");
+                    vibChart.ChartAreas["fftChart"].AxisX.Title = "Frequency [Hz]";
+                    vibChart.ChartAreas["fftChart"].AxisX.Minimum = 0;
 
                     break;
                 case 5:  // Waterfall
@@ -712,14 +754,17 @@ namespace GPM_MQTTClient2
                     vibChart.Series.Add("Waterfall");
                     vibChart.Series["Waterfall"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Point;
                     //vibChart.Series["Waterfall"].YValueType = ChartValueType.DateTime;
-
+                    vibChart.ChartAreas["wfChart"].AxisX.Title = "Frequency [Hz]";
                     vibChart.Titles.Add("Frequency Spectrum Waterfall");
+                    vibChart.ChartAreas["wfChart"].AxisX.Minimum = 0;
+
                     break;
                 case 6:  // FFT and Waterfall
                     vibChart.ChartAreas.Add("fftChart");
                     vibChart.Series.Add("FFT");
                     vibChart.Series["FFT"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
                     vibChart.Titles.Add("Frequency Spectrum & Waterfall");
+                    vibChart.ChartAreas["fftChart"].AxisX.Minimum = 0;
 
                     ChartArea wfchart = vibChart.ChartAreas.Add("wfChart");
                     Series wfseries = new Series("Waterfall");
@@ -727,8 +772,18 @@ namespace GPM_MQTTClient2
                     vibChart.Series.Add(wfseries);
                     vibChart.Series["Waterfall"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Point;
                     //vibChart.Series["Waterfall"].YValueType = ChartValueType.DateTime;
+                    vibChart.ChartAreas["wfChart"].AxisX.Minimum = 0;
 
                     //vibChart.Titles.Add("Frequency Spectrum Waterfall");
+                    break;
+                case 7:
+                    vibChart.ChartAreas.Add("surfChart");
+                    vibChart.ChartAreas["surfChart"].AxisX.Minimum = 0;
+                    vibChart.ChartAreas["surfChart"].AxisX.TextOrientation = TextOrientation.Rotated90;
+                    vibChart.ChartAreas["surfChart"].AxisX.LabelStyle.Angle = 60;
+                    vibChart.ChartAreas["surfChart"].Area3DStyle.Enable3D = true;
+                    vibChart.ChartAreas["surfChart"].Area3DStyle.Rotation = 10;
+
                     break;
                 default:
                     break;
