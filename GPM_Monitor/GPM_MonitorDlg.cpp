@@ -437,7 +437,7 @@ void CGPM_MonitorDlg::parseSP(char* msg, int len)
 	pFlag->SetCheck(cfgdata.drFlag);
 }
 
-char msg[100];
+
 void CGPM_MonitorDlg::OnBnClickedConnect()
 {
 	char CommPort[100];
@@ -481,6 +481,11 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 			sa.sin_addr.s_addr = inet_addr(msg);
 			sa.sin_port = htons(port);
 			
+			unsigned long value = 1;
+			if (ioctlsocket(gpmSock, FIONBIO, &value) == SOCKET_ERROR)
+				return;
+
+
 			nResult = connect(gpmSock,(const sockaddr*)&sa,sizeof(sa));
 			if (nResult==SOCKET_ERROR)
 			{
@@ -488,7 +493,26 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 				char errMsg[500];
 				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,0,nErr,0,errMsg,500,NULL);
 				TRACE1("Error: %s\r\n",errMsg);
+				if (nErr != WSAEWOULDBLOCK) return;
+				int iwait;
+				for (iwait = 0; iwait < 10; iwait++) {
+					fd_set fd;
+					FD_ZERO(&fd);
+					FD_SET(gpmSock, &fd);
+					timeval tv;
+
+					tv.tv_sec = 5;
+					tv.tv_usec = 0;
+
+					if (select(0, NULL, &fd, NULL, &tv) > 0)
+						break;
+					Sleep(100);
+				}
+				if (iwait == 10) return;
 			}
+			value = 0;
+			if (ioctlsocket(gpmSock, FIONBIO, &value) == SOCKET_ERROR)
+				return;
 			Connected = 2;
 			upgrading = false;
 			int timeout = 100;
@@ -503,7 +527,6 @@ void CGPM_MonitorDlg::OnBnClickedConnect()
 
 			nResult = recv(gpmSock,msg,100,0);
 
-			char msg[500];
 			Send("?v\r",3);
 			Sleep(500);
 			int nc = 500;

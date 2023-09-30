@@ -11,8 +11,14 @@ using System.Windows.Forms;
 
 namespace GPM_MQTTClient2
 {
+    /// <summary>
+    /// About Window definition
+    /// </summary>
     public partial class AboutBox : Form
     {
+        /// <summary>
+        /// Constructor method for the About window
+        /// </summary>
         public AboutBox()
         {
             VersionInfo myInfo = new VersionInfo();
@@ -29,6 +35,9 @@ namespace GPM_MQTTClient2
 
         #region Assembly Attribute Accessors
 
+        /// <summary>
+        /// Get the Application title from the build project Assembly file
+        /// </summary>
         public string AssemblyTitle
         {
             get
@@ -46,6 +55,9 @@ namespace GPM_MQTTClient2
             }
         }
 
+        /// <summary>
+        /// Get the Application version from the build project Assembly file
+        /// </summary>
         public string AssemblyVersion
         {
             get
@@ -54,6 +66,9 @@ namespace GPM_MQTTClient2
             }
         }
 
+        /// <summary>
+        /// Get the Application description from the build project Assembly file
+        /// </summary>
         public string AssemblyDescription
         {
             get
@@ -67,6 +82,9 @@ namespace GPM_MQTTClient2
             }
         }
 
+        /// <summary>
+        /// Get the Application product name from the build project Assembly file
+        /// </summary>
         public string AssemblyProduct
         {
             get
@@ -80,6 +98,9 @@ namespace GPM_MQTTClient2
             }
         }
 
+        /// <summary>
+        /// Get the Application copyright information from the build project Assembly file
+        /// </summary>
         public string AssemblyCopyright
         {
             get
@@ -93,6 +114,9 @@ namespace GPM_MQTTClient2
             }
         }
 
+        /// <summary>
+        /// Get the Application company name from the build project Assembly file
+        /// </summary>
         public string AssemblyCompany
         {
             get

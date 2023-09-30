@@ -17,12 +17,18 @@ using System.Windows.Forms.DataVisualization.Charting;
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
 
-/// <summary>
-/// GPM_MQTTClient defines a Client Application to an MQTT broker for managing vibration 
-/// data acquisition devices.
-/// </summary>
 namespace GPM_MQTTClient2
 {
+    /// <summary>
+    /// The <see cref="GPM_MQTTClient2"/> namespace defines a Client Application to an MQTT broker for managing vibration 
+    /// data acquisition devices.
+    /// </summary>
+
+    [System.Runtime.CompilerServices.CompilerGenerated]
+    class NamespaceDoc
+    {
+    }
+
     /// <summary>
     /// class definition for the Main Application form
     /// </summary>
@@ -36,7 +42,7 @@ namespace GPM_MQTTClient2
         public static string clientId;
         internal bool guiUpdate = false;
         internal int idev = 0;
-
+        internal int ichart = -1;
         List<string> topiclist = new List<string>();
         RegistryKey key;
 
@@ -131,7 +137,7 @@ namespace GPM_MQTTClient2
         /// <summary>
         /// System Override to add the "About" command to the system menu
         /// </summary>
-        /// <param name="e"></param>
+        /// <param name="e"> Event arguments for the callback</param>
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
@@ -155,7 +161,7 @@ namespace GPM_MQTTClient2
         /// <summary>
         /// System override to catch About Box Command message
         /// </summary>
-        /// <param name="m"></param>
+        /// <param name="m">Message to be processed</param>
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
@@ -206,11 +212,30 @@ namespace GPM_MQTTClient2
                 client.Disconnect();
                 butConnect.Text = "Connect";
 
+                guiUpdate = true;
                 topiclist.Clear();
                 devices.Clear();
                 cbTopics.Items.Clear();
                 cbDevices.Items.Clear();
                 txtRMS.Text = "";
+
+                cbTopics.Text = "";
+                cbDevices.Text = "";
+
+                lblFirmware.Text = "Firmware: ";
+                lblIP.Text = "IP Address: ";
+                cbAxis.Text = "";
+                cbWindow.Text = "";
+                cbSamples.Text = "";
+                cbRate.Text = "";
+                cbScale.Text = "";
+                cbInterval.Text = "";
+                cbDSamp.Text = "";
+
+                guiUpdate = false;
+
+                cbChart.Text = "";
+                vibChart.ChartAreas.Clear();
             }
             else
             {
@@ -256,12 +281,18 @@ namespace GPM_MQTTClient2
                 cbDevices.Items.Add(dev);
                 if (devices.Count == 1) cbDevices.Text = dev;
 
+                
+            } 
+            else if (devices[idev].valid==false)
+            {
                 // request parameters
-                int it = topic.LastIndexOf('/');
-                if ((it > 0) && (topic.Length > 0))
+                System.Threading.Thread.Sleep(500);
+                System.Diagnostics.Debug.WriteLine("Requesting settings from " + devices[idev].name);
+                int it = devices[idev].topic.LastIndexOf('/');
+                if ((it > 0) && (devices[idev].topic.Length > 0))
                 {
-                    string top = topic.Substring(0, it);
-                    client.Publish(top + '/' + dev, Encoding.UTF8.GetBytes("{\"cmd\":\"sp*\"}"));
+                    string top = devices[idev].topic.Substring(0, it);
+                    client.Publish(top + '/' + devices[idev].name, Encoding.UTF8.GetBytes("{\"cmd\":\"sp*\"}"));
                 }
             }
         }
@@ -272,9 +303,9 @@ namespace GPM_MQTTClient2
         /// If the device is selected in the GUI, then also the GUI values for the timestamp and RMS are updated.
         /// If the RMS chart is selected, then the chart is also updated.
         /// </summary>
-        /// <param name="dev"></param>
-        /// <param name="rms"></param>
-        /// <param name="time"></param>
+        /// <param name="dev">Device name</param>
+        /// <param name="rms">RMS value of the captured vibration dataset</param>
+        /// <param name="time">Timestamp of the current dataset</param>
         public void updateDev(string dev, double rms, string time)
         {
             DateTime rmstime = DateTime.Parse(time);
@@ -300,7 +331,7 @@ namespace GPM_MQTTClient2
                 {
                     txtRMS.Text = rms.ToString();
                     lblTime.Text = "Date and Time: " + time;
-                    if (cbChart.SelectedIndex == 0)
+                    if (ichart == 0)
                     {
                         vibChart.Series["RMS"].Points.AddXY(rmstime, rms);
                         if (vibChart.Series["RMS"].Points.Count > 1000)
@@ -381,7 +412,7 @@ namespace GPM_MQTTClient2
             }
             try
             {
-                if ((dev == cbDevices.Text) && ((cbChart.SelectedIndex == 4) || (cbChart.SelectedIndex == 6)))
+                if ((dev == cbDevices.Text) && ((ichart == 4) || (ichart == 6)))
                 {
                     vibChart.Series["FFT"].Points.Clear();
                     for (int i = 0; i < values.Length; i++)
@@ -392,7 +423,7 @@ namespace GPM_MQTTClient2
                     vibChart.ChartAreas["fftChart"].AxisX.Interval = 25;
                     vibChart.Update();
                 }
-                if ((dev == cbDevices.Text) && ((cbChart.SelectedIndex == 5) || (cbChart.SelectedIndex == 6)))
+                if ((dev == cbDevices.Text) && ((ichart == 5) || (ichart == 6)))
                 {
                     vibChart.Series["Waterfall"].Points.Clear();
                     for (int k = 0; k < 100; k++)
@@ -416,22 +447,24 @@ namespace GPM_MQTTClient2
                     vibChart.ChartAreas["wfChart"].AxisX.Interval = 25;
                     vibChart.Update();
                 }
-                if ((dev == cbDevices.Text) && (cbChart.SelectedIndex == 7))
+                if ((dev == cbDevices.Text) && (ichart == 7))
                 {
                     vibChart.Series.Clear();
+                    int ymax = 0;
                     for (int k = 0; k < 100; k++)
                     {
                         //string fftname = "FFT" + k.ToString();
                         Series fft = new Series();
-                        fft.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+                        fft.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.SplineArea;
                         for (int i = 0; i < 128; i++)
                         {
+                            if ((int)devices[idev].FFTvalues[k, i] > ymax) ymax = (int)devices[idev].FFTvalues[k, i];
                             DataPoint p = new DataPoint(i * fmax / 128, (int)devices[idev].FFTvalues[k, i]);
-                            int red = 128 + (int)devices[idev].FFTvalues[k, i] * 5;
+                            int red = 25 + (int)devices[idev].FFTvalues[k, i] * 5;
                             if (red > 255) red = 255; else if (red < 0) red = 0;
-                            int green = 128 + (int)devices[idev].FFTvalues[k, i] - 20;
+                            int green = 25 + (int)devices[idev].FFTvalues[k, i] - 20;
                             if (green > 255) green = 255; else if (green < 0) green = 0;
-                            int blue = 128 + (int)devices[idev].FFTvalues[k, i] - 50;
+                            int blue = 255 - (int)devices[idev].FFTvalues[k, i]*5;
                             if (blue > 255) blue = 255; else if (blue < 0) blue = 0;
                             p.Color = Color.FromArgb(red, green, blue);
 
@@ -439,7 +472,7 @@ namespace GPM_MQTTClient2
                         }
                         vibChart.Series.Add(fft);
                     }
-
+                    vibChart.ChartAreas["surfChart"].AxisY.Maximum = ymax;
                     vibChart.ChartAreas["surfChart"].AxisX.Maximum = fmax;
                     vibChart.ChartAreas["surfChart"].AxisX.Interval = 25;
                     vibChart.Update();
@@ -464,7 +497,7 @@ namespace GPM_MQTTClient2
             {
                 if (dev == cbDevices.Text)
                 {
-                    if ((cbChart.SelectedIndex == 1) || (cbChart.SelectedIndex == 3))
+                    if ((ichart == 1) || (ichart == 3))
                     {
                         vibChart.Series["modeBins"].Points.Clear();
                         double[] x = { 30, 60, 90, 120, 150, 180, 210 };
@@ -480,7 +513,7 @@ namespace GPM_MQTTClient2
                         
                         vibChart.Update();
                     }
-                    if ((cbChart.SelectedIndex == 2) || (cbChart.SelectedIndex == 3))
+                    if ((ichart == 2) || (ichart == 3))
                     {
                         vibChart.Series["octoBins"].Points.Clear();
                         double[] x = { 10, 20, 40, 80, 160, 320, 640 };
@@ -663,6 +696,7 @@ namespace GPM_MQTTClient2
 
         private void chChart_SelectedIndexChanged(object sender, EventArgs e)
         {
+            ichart = cbChart.SelectedIndex;
             UpdateChartType();
         }
         private void UpdateChartType()
@@ -671,7 +705,7 @@ namespace GPM_MQTTClient2
             vibChart.Series.Clear();
             vibChart.ChartAreas.Clear();
             vibChart.Titles.Clear();
-            switch (cbChart.SelectedIndex)
+            switch (ichart)
             {
                 case 0:   // RMS
                     vibChart.ChartAreas.Add("chart");
@@ -788,6 +822,7 @@ namespace GPM_MQTTClient2
                 default:
                     break;
             }
+            
         }
 
         private void cbAxis_SelectedIndexChanged(object sender, EventArgs e)
@@ -946,7 +981,8 @@ namespace GPM_MQTTClient2
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     // call Firmware Upgrade with 
-                    System.Diagnostics.Process.Start("CMD.exe", "GPM_UpdateLite.exe " + devices[idev].ip + " " + openFileDialog.FileName);
+                    System.Diagnostics.Process.Start("CMD.exe", "/C GPM_UpdateLite.exe " + devices[idev].ip + " " + openFileDialog.FileName);
+                    //Update(devices[idev].ip, openFileDialog.FileName);
                 }
             }
         }
@@ -998,5 +1034,58 @@ namespace GPM_MQTTClient2
 
             //Help.ShowHelp(null, @".\JazzManager.chm", @"html\jazzmgr_intro.htm");
         }
+
+       
+        private void Update(string ip, string fw)
+        {
+            try
+            {
+                using (Process p = new Process())
+                {
+                    // set start info
+                    p.StartInfo = new ProcessStartInfo("GPM_UpdateLite.exe")
+                    { 
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        Arguments = ip + " " + fw,
+                        RedirectStandardInput = true,
+                        RedirectStandardOutput = true,
+                        //WorkingDirectory = @"C:\Projects\GPS\UBlox\GPM_Monitor\Debug"
+                    };
+                    // event handlers for output & error
+                    p.OutputDataReceived += p_OutputDataReceived;
+                    p.ErrorDataReceived += p_ErrorDataReceived;
+
+                    // start process
+                    p.Start();
+                    // send command to its input
+                    //p.StandardInput.Write("GPM_UpdateLite.exe " + ip+" "+fw);
+                    //wait
+                    p.WaitForExit();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+        static void p_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            Process p = sender as Process;
+            if (p == null)
+                return;
+            Console.WriteLine(e.Data);
+        }
+
+        static void p_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            Process p = sender as Process;
+            if (p == null)
+                return;
+            Console.WriteLine(e.Data);
+        }
+        
     }
 }
+

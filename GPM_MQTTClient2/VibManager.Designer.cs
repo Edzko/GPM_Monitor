@@ -671,6 +671,7 @@ namespace GPM_MQTTClient2
             // 
             // vibChart
             // 
+            chartArea1.Area3DStyle.Enable3D = true;
             chartArea1.Name = "ChartArea1";
             this.vibChart.ChartAreas.Add(chartArea1);
             this.vibChart.Location = new System.Drawing.Point(7, 25);

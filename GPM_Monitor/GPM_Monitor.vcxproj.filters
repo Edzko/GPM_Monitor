@@ -65,18 +65,13 @@
     <CustomBuild Include="Resource.h">
       <Filter>Resources</Filter>
     </CustomBuild>
+    <CustomBuild Include="hlp\GPM_Monitor.hhp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="hlp\GPM_Monitor.chm">
-      <Filter>Help Files</Filter>
-    </None>
     <None Include="hlp\GPM_Monitor.hhc">
       <Filter>Help Files</Filter>
     </None>
     <None Include="hlp\GPM_Monitor.hhk">
-      <Filter>Help Files</Filter>
-    </None>
-    <None Include="hlp\GPM_Monitor.hhp">
       <Filter>Help Files</Filter>
     </None>
     <None Include="hlp\HIDD_ROOT_DIALOG.htm">

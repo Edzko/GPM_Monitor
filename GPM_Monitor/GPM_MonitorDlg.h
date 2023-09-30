@@ -148,7 +148,7 @@ public:
 	unsigned short crc;
 	int iFW, nFW, wFW;
 	FILE *fw;
-
+	char msg[500];
 	JOYINFOEX Joystick;
 	JOYCAPS JoyCaps;
 	MMRESULT mResult;
