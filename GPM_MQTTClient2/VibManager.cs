@@ -19,16 +19,7 @@ using uPLibrary.Networking.M2Mqtt.Messages;
 
 namespace GPM_MQTTClient2
 {
-    /// <summary>
-    /// The <see cref="GPM_MQTTClient2"/> namespace defines a Client Application to an MQTT broker for managing vibration 
-    /// data acquisition devices.
-    /// </summary>
-
-    [System.Runtime.CompilerServices.CompilerGenerated]
-    class NamespaceDoc
-    {
-    }
-
+    
     /// <summary>
     /// class definition for the Main Application form
     /// </summary>
@@ -420,7 +411,12 @@ namespace GPM_MQTTClient2
                         vibChart.Series["FFT"].Points.AddXY(i * fmax / 128, values[i]);
                     }
                     vibChart.ChartAreas["fftChart"].AxisX.Maximum = fmax;
-                    vibChart.ChartAreas["fftChart"].AxisX.Interval = 25;
+                    if (fmax < 200)
+                        vibChart.ChartAreas["fftChart"].AxisX.Interval = 25;
+                    else if (fmax < 500)
+                        vibChart.ChartAreas["fftChart"].AxisX.Interval = 50;
+                    else
+                        vibChart.ChartAreas["fftChart"].AxisX.Interval = 100;
                     vibChart.Update();
                 }
                 if ((dev == cbDevices.Text) && ((ichart == 5) || (ichart == 6)))
@@ -444,7 +440,14 @@ namespace GPM_MQTTClient2
                     }
 
                     vibChart.ChartAreas["wfChart"].AxisX.Maximum = fmax;
-                    vibChart.ChartAreas["wfChart"].AxisX.Interval = 25;
+                    if (fmax<200)
+                        vibChart.ChartAreas["wfChart"].AxisX.Interval = 25;
+                    else if (fmax<500)
+                        vibChart.ChartAreas["wfChart"].AxisX.Interval = 50;
+                    else
+                        vibChart.ChartAreas["wfChart"].AxisX.Interval = 100;
+
+
                     vibChart.Update();
                 }
                 if ((dev == cbDevices.Text) && (ichart == 7))
@@ -861,7 +864,7 @@ namespace GPM_MQTTClient2
             if (!guiUpdate)
             {
                 client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text,
-                    Encoding.UTF8.GetBytes("{\"cmd\":\"sp88," + (cbRate.SelectedIndex + 1).ToString() + "\"}"));
+                    Encoding.UTF8.GetBytes("{\"cmd\":\"sp87," + (cbRate.SelectedIndex + 1).ToString() + "\"}"));
                 devices[idev].rate = cbRate.SelectedIndex + 1;
             }
         }
@@ -913,6 +916,7 @@ namespace GPM_MQTTClient2
             {
                 client.Unsubscribe(new string[] { "#" });
                 client.Disconnect();
+                System.Threading.Thread.Sleep(1000);
             }
             key.Close();
 
@@ -989,7 +993,7 @@ namespace GPM_MQTTClient2
 
         private void vibChart_PostPaint(object sender, ChartPaintEventArgs e)
         {
-            if ((cbChart.SelectedIndex == 2) || (cbChart.SelectedIndex == 3))
+            if ((ichart == 2) || (ichart == 3))
             {
                 Graphics g = e.ChartGraphics.Graphics;
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
@@ -1086,6 +1090,16 @@ namespace GPM_MQTTClient2
             Console.WriteLine(e.Data);
         }
         
+    }
+
+    /// <summary>
+    /// The <see cref="GPM_MQTTClient2"/> namespace defines a Client Application to an MQTT broker for managing vibration 
+    /// data acquisition devices.
+    /// </summary>
+
+    [System.Runtime.CompilerServices.CompilerGenerated]
+    class NamespaceDoc
+    {
     }
 }
 

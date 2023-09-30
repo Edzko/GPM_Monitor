@@ -463,7 +463,8 @@ namespace GPM_MQTTClient2
             this.cbAxis.Items.AddRange(new object[] {
             "Acc X",
             "Acc Y",
-            "Acc Z"});
+            "Acc Z",
+            "All Axes"});
             this.cbAxis.Location = new System.Drawing.Point(99, 101);
             this.cbAxis.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbAxis.Name = "cbAxis";
@@ -479,7 +480,11 @@ namespace GPM_MQTTClient2
             "1 kHz",
             "2 kHz",
             "3 kHz",
-            "4 kHz"});
+            "4 kHz",
+            "5 kHz",
+            "6 kHz",
+            "7 kHz",
+            "8 kHz"});
             this.cbRate.Location = new System.Drawing.Point(299, 98);
             this.cbRate.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cbRate.Name = "cbRate";
