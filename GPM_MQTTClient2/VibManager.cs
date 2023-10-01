@@ -31,38 +31,80 @@ namespace GPM_MQTTClient2
         public static MqttClient client;
         /// <summary>MQTT Client access unique identifier</summary>
         public static string clientId;
-        internal bool guiUpdate = false;
-        internal int idev = 0;
-        internal int ichart = -1;
-        List<string> topiclist = new List<string>();
+        /// <summary>Flag to indicate that the system is updating the GUI controls, and that the callback functions shouls be ignored.</summary>
+        public bool guiUpdate = false;
+        /// <summary>Index of the selected device in the <see cref="devices"/> list</summary>
+        public int idev = 0;
+        /// <summary>Index of the selected chart.</summary>
+        /// <remarks>It is necessary to use this index, since the Application will change the <see cref="cbChart.SelectedIndex()"/> value 
+        /// before a selection from the droplist is actually selected, and the chart area is properly initialized.
+        /// </remarks>
+        public int ichart = -1;
+        /// <summary>
+        /// List of all received topics from the broker.
+        /// </summary>
+        public List<string> topiclist = new List<string>();
+        /// <summary>
+        /// Registry key that is used to store Application settings for next use.
+        /// </summary>
         RegistryKey key;
 
         const string userRoot = "HKEY_CURRENT_USER";
         const string subkey = "Software\\Magna\\MQTTClient";
         const string keyName = userRoot + "\\" + subkey;
 
-        internal class DeviceData
+        /// <summary>Class definition for the Device data record. This retains data and configuration of all discovered devices.</summary>
+        public class DeviceData
         {
-            internal string name;
-            internal string topic;
-            internal bool valid;
-            internal string firmware;
-            internal string timestamp;
-            internal List<double> rms;
-            internal List<DateTime> rmstime;
-            internal string ip;
-            internal double scale;
-            internal int window;
-            internal int axes;
-            internal int rate;
-            internal int samples;
-            internal int interval;
-            internal int pnts;
-            internal double[] FFTmode;
-            internal double[] FFToct;
-            internal double[,] FFTvalues;
+            /// <summary>Device name</summary>
+            public string name;     
+            /// <summary>Topic associated with the periodic device data.</summary>
+            public string topic;
+            /// <summary>Flag to indicate that the values for the device settings are valid.</summary>
+            /// <remarks>Initially this flag is set to False. It will be set to True when the Settings message is received for the device.</remarks>
+            public bool valid;
+            /// <summary>String value with the devices's current firmware information</summary>
+            public string firmware;
+            /// <summary>String with the Date and Time of the most recent message from the device.</summary>
+            public string timestamp;
+            /// <summary>Array of history values for RMS.</summary>
+            public List<double> rms;
+            /// <summary>Array of timestamps associated with the received and stored values for the RMS</summary>
+            public List<DateTime> rmstime;
+            /// <summary>The current IP address of the device on the local WiFi network.</summary>
+            public string ip;
+            /// <summary>Value of the device setting for scaling</summary>
+            public double scale;
+            /// <summary>Value of the device setting for selection of the FFT Windowing function</summary>
+            public int window;
+            /// <summary>Value of the device setting for the active Accelerometer axis.</summary>
+            /// <remarks>The value of 0 refers to the X-axis, 1 to the Y-axis and 2 to the Z-axis. 
+            /// A value of 3 for this setting refers to all X, Y and Z axes.</remarks>
+            public int axes;
+            /// <summary>Value of the device setting for the acquisition frequency</summary>
+            public int rate;
+            /// <summary>Value of the device setting for down-sampling the data in to the 128 samples for the MQTT message dataset.</summary>
+            /// <remarks>The value refers to the number of samples combined for each of the 128 values. </remarks>
+            /// <example>samples=3: 
+            /// value[0] = (fft[0]+fft[1]+fft[3])/3; 
+            /// value[1] = (fft[4]+fft[5]+fft[6])/3;
+            /// </example>
+            public int samples;
+            /// <summary>Message interval to the MQTT broker in seconds</summary>
+            public int interval;
+            /// <summary>Size of the acquisition dataset. </summary>
+            /// <remarks> This value should be a power of 2, in order for the FFT algorithm to execute effectively.
+            /// </remarks>
+            public int pnts;
+            /// <summary>Array of 7 value for the 30 Hz frequency modes</summary>
+            public double[] FFTmode;
+            /// <summary>Array of 7 values for the 10 Hz Octave frequencies</summary>
+            public double[] FFToct;
+            /// <summary>History array of all 128 FFT values in the MQTT message dataset</summary>
+            public double[,] FFTvalues;
         }
-        internal List<DeviceData> devices = new List<DeviceData>();
+        /// <summary>Array of Device records</summary>
+        public List<DeviceData> devices = new List<DeviceData>();
 
         // ID for the About item on the system menu
         private int SYSMENU_ABOUT_ID = 0x1;
@@ -180,7 +222,7 @@ namespace GPM_MQTTClient2
             }
         }
         /// <summary>
-        /// Internal Function call to request the current Application's version information
+        /// Function call to request the current Application's version information
         /// </summary>
         public string AssemblyVersion
         {
@@ -387,7 +429,13 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void updateFFT(string dev, double[] values, double fmax)
+        /// <summary>
+        /// This method is called when an FFT dataset was received for a device from the MQTT broker
+        /// </summary>
+        /// <param name="dev">name of the device that sent the message</param>
+        /// <param name="values">The array of FFT values in the message dataset</param>
+        /// <param name="fmax">The freqency value that corresponds to the last value in the dataset</param>
+        public void updateFFT(string dev, double[] values, double fmax)
         {
             int idev = devices.FindIndex(x => x.name == dev);
             if (idev >= 0)
@@ -484,8 +532,13 @@ namespace GPM_MQTTClient2
             catch (Exception) { }
         }
 
-
-            private void updateBins(string dev, double[] values, double[] valuesOct)
+        /// <summary>
+        /// This method is called when an frequency Modes or Octaves dataset was received for a device from the MQTT broker
+        /// </summary>
+        /// <param name="dev">name of the device that sent the message to the MQTT broker</param>
+        /// <param name="values">Array of 7 values for the Frequency modes</param>
+        /// <param name="valuesOct">Array of 7 values for the Frequency Octaves</param>
+        public void updateBins(string dev, double[] values, double[] valuesOct)
         {
             int idev = devices.FindIndex(x => x.name == dev);
             if (idev >= 0)
@@ -541,12 +594,22 @@ namespace GPM_MQTTClient2
             catch (Exception) { }
         }
 
-        private void Client_ConnectionClosed(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event that the connection to the MQTT server is lost.
+        /// </summary>
+        /// <param name="sender">MQTT client</param>
+        /// <param name="e">event arguments</param>
+        public void Client_ConnectionClosed(object sender, EventArgs e)
         {
             //throw new NotImplementedException();
         }
 
-        private void Client_MqttMsgSubscribed(object sender, MqttMsgSubscribedEventArgs e)
+        /// <summary>
+        /// Callback function to indicate that the client has subscribed to the requested token(s)
+        /// </summary>
+        /// <param name="sender">MQTT client</param>
+        /// <param name="e">event arguments</param>
+        public void Client_MqttMsgSubscribed(object sender, MqttMsgSubscribedEventArgs e)
         {
             //throw new NotImplementedException();
 
@@ -554,8 +617,12 @@ namespace GPM_MQTTClient2
         }
 
 
-
-        void client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
+        /// <summary>
+        /// Callback function to indicate that a message was received for the subscribed token(s)
+        /// </summary>
+        /// <param name="sender">MQTT client</param>
+        /// <param name="e">event arguments, including topic and message payload</param>
+        public void client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
         {
             //string ReceivedMessage = Encoding.UTF8.GetString(e.Message);
 
@@ -683,7 +750,12 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void butCmd_Click(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event when the user clicks on the 'ENTER' button.
+        /// </summary>
+        /// <param name="sender">Button control</param>
+        /// <param name="e">event arguments</param>
+        public void butCmd_Click(object sender, EventArgs e)
         {
             if (cbTopics.Text.Length == 0)
             {
@@ -697,12 +769,22 @@ namespace GPM_MQTTClient2
 
         }
 
-        private void chChart_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function to indicate that the user has selected a different chart type from the selection list
+        /// </summary>
+        /// <param name="sender">Combobox with the list of chart types</param>
+        /// <param name="e">event arguments</param>
+        public void chChart_SelectedIndexChanged(object sender, EventArgs e)
         {
             ichart = cbChart.SelectedIndex;
             UpdateChartType();
         }
-        private void UpdateChartType()
+        
+        /// <summary>
+        /// This method is called by the <see cref="cbChart"/> callback function. It configures the chart object for the currently selected chart type. 
+        /// The method is also called by some other methods of the application, to clear or reset the chart areas.
+        /// </summary>
+        public void UpdateChartType()
         {
             vibChart.ResetAutoValues();
             vibChart.Series.Clear();
@@ -828,7 +910,12 @@ namespace GPM_MQTTClient2
             
         }
 
-        private void cbAxis_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event that the user selects a different setting for the accelerometer axes to capture.
+        /// </summary>
+        /// <param name="sender">User drop-down control with the selections for the setting</param>
+        /// <param name="e">event arguments</param>
+        public void cbAxis_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
             {
@@ -838,7 +925,12 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void cbScale_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event that the user selects a different value for the scaling factor of the FFT data.
+        /// </summary>
+        /// <param name="sender">User drop-down control with the selections for the setting</param>
+        /// <param name="e">event arguments</param>
+        public  void cbScale_SelectedIndexChanged(object sender, EventArgs e)
         {
             int scale = (int)(1000.0 * Convert.ToDouble(cbScale.Text));
             if (!guiUpdate)
@@ -849,7 +941,12 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void cbDSamp_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event that the user selects a different value for the down-sampling factor of the FFT data.
+        /// </summary>
+        /// <param name="sender">User drop-down control with the selections for the setting</param>
+        /// <param name="e">event arguments</param>
+        public void cbDSamp_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
             {
@@ -859,7 +956,12 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void cbRate_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event that the user selects a different value for the acquisition rate (sampling frequency) of the FFT data.
+        /// </summary>
+        /// <param name="sender">User drop-down control with the selections for the setting</param>
+        /// <param name="e">event arguments</param>
+        public void cbRate_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
             {
@@ -869,7 +971,12 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void cbSamples_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event that the user selects a different value
+        /// </summary>
+        /// <param name="sender">User drop-down control with the selections for the setting</param>
+        /// <param name="e">event arguments</param>
+        public void cbSamples_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
             {
@@ -879,7 +986,12 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void cbFmt_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event that the user selects a different value
+        /// </summary>
+        /// <param name="sender">User drop-down control with the selections for the setting</param>
+        /// <param name="e">event arguments</param>
+        public void cbFmt_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
             {
@@ -889,7 +1001,12 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void cbWindow_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event that the user selects a different value
+        /// </summary>
+        /// <param name="sender">User drop-down control with the selections for the setting</param>
+        /// <param name="e">event arguments</param>
+        public void cbWindow_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!guiUpdate)
             {
@@ -899,7 +1016,12 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void cbInterval_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event that the user selects a different value
+        /// </summary>
+        /// <param name="sender">User drop-down control with the selections for the setting</param>
+        /// <param name="e">event arguments</param>
+        public void cbInterval_SelectedIndexChanged(object sender, EventArgs e)
         {
             int iv = (int)(1000.0 * Convert.ToDouble(cbInterval.Text));
             if (!guiUpdate)
@@ -910,7 +1032,13 @@ namespace GPM_MQTTClient2
             }
         }
 
-        private void VibManager_FormClosed(object sender, FormClosedEventArgs e)
+
+        /// <summary>
+        /// Callback function for the event that the user selects a different value
+        /// </summary>
+        /// <param name="sender">User drop-down control with the selections for the setting</param>
+        /// <param name="e">event arguments</param>
+        public void VibManager_FormClosed(object sender, FormClosedEventArgs e)
         {
             if (client.IsConnected)
             {
@@ -922,7 +1050,12 @@ namespace GPM_MQTTClient2
 
         }
 
-        private void cbDevices_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Callback function for the event that the user selects a different value
+        /// </summary>
+        /// <param name="sender">User drop-down control with the selections for the setting</param>
+        /// <param name="e">event arguments</param>
+        public void cbDevices_SelectedIndexChanged(object sender, EventArgs e)
         {
             string dev = cbDevices.Text;
 
