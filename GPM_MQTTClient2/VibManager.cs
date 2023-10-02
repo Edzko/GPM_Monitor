@@ -25,6 +25,11 @@ namespace GPM_MQTTClient2
     /// </summary>
     public partial class VibManager : Form
     {
+
+        Configure frmConfig;
+        Dashboard frmDashboard;
+        public bool frmVibration = true;
+
         /// <summary>MQTT security access token</summary>
         public static String access_token = "no valid token received yet.";
         /// <summary>MQTT client instance</summary>
@@ -36,7 +41,7 @@ namespace GPM_MQTTClient2
         /// <summary>Index of the selected device in the <see cref="devices"/> list</summary>
         public int idev = 0;
         /// <summary>Index of the selected chart.</summary>
-        /// <remarks>It is necessary to use this index, since the Application will change the <see cref="cbChart.SelectedIndex()"/> value 
+        /// <remarks>It is necessary to use this index, since the Application will change the <see cref="cbChart" /> SelectedIndex value 
         /// before a selection from the droplist is actually selected, and the chart area is properly initialized.
         /// </remarks>
         public int ichart = -1;
@@ -105,6 +110,8 @@ namespace GPM_MQTTClient2
         }
         /// <summary>Array of Device records</summary>
         public List<DeviceData> devices = new List<DeviceData>();
+
+        
 
         // ID for the About item on the system menu
         private int SYSMENU_ABOUT_ID = 0x1;
@@ -342,6 +349,7 @@ namespace GPM_MQTTClient2
         public void updateDev(string dev, double rms, string time)
         {
             DateTime rmstime = DateTime.Parse(time);
+            //DateTime rmstime = DateTime.Now;
             int idev = devices.FindIndex(x => x.name == dev);
             if (idev >= 0)
             {
@@ -458,13 +466,17 @@ namespace GPM_MQTTClient2
                     {
                         vibChart.Series["FFT"].Points.AddXY(i * fmax / 128, values[i]);
                     }
-                    vibChart.ChartAreas["fftChart"].AxisX.Maximum = fmax;
-                    if (fmax < 200)
-                        vibChart.ChartAreas["fftChart"].AxisX.Interval = 25;
-                    else if (fmax < 500)
-                        vibChart.ChartAreas["fftChart"].AxisX.Interval = 50;
-                    else
-                        vibChart.ChartAreas["fftChart"].AxisX.Interval = 100;
+                    //try
+                    {
+                        vibChart.ChartAreas["fftChart"].AxisX.Maximum = fmax;
+                        if (fmax < 200)
+                            vibChart.ChartAreas["fftChart"].AxisX.Interval = 25;
+                        else if (fmax < 500)
+                            vibChart.ChartAreas["fftChart"].AxisX.Interval = 50;
+                        else
+                            vibChart.ChartAreas["fftChart"].AxisX.Interval = 100;
+                    }
+                    //catch (Exception) { }
                     vibChart.Update();
                 }
                 if ((dev == cbDevices.Text) && ((ichart == 5) || (ichart == 6)))
@@ -525,7 +537,12 @@ namespace GPM_MQTTClient2
                     }
                     vibChart.ChartAreas["surfChart"].AxisY.Maximum = ymax;
                     vibChart.ChartAreas["surfChart"].AxisX.Maximum = fmax;
-                    vibChart.ChartAreas["surfChart"].AxisX.Interval = 25;
+                    if (fmax < 200)
+                        vibChart.ChartAreas["surfChart"].AxisX.Interval = 25;
+                    else if (fmax < 500)
+                        vibChart.ChartAreas["surfChart"].AxisX.Interval = 50;
+                    else
+                        vibChart.ChartAreas["surfChart"].AxisX.Interval = 100;
                     vibChart.Update();
                 }
             }
@@ -624,7 +641,10 @@ namespace GPM_MQTTClient2
         /// <param name="e">event arguments, including topic and message payload</param>
         public void client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
         {
-            //string ReceivedMessage = Encoding.UTF8.GetString(e.Message);
+            string ReceivedMessage = Encoding.UTF8.GetString(e.Message);
+
+            //if (this.Visible() == false) return;
+            if (frmVibration == false) return;
 
             //System.Diagnostics.Debug.WriteLine(e.Topic);
             if (topiclist.IndexOf(e.Topic) == -1)
@@ -980,8 +1000,9 @@ namespace GPM_MQTTClient2
         {
             if (!guiUpdate)
             {
+                int nsamp = Convert.ToInt32(cbSamples.Text.Substring(0, 4));
                 client.Publish(devices[idev].topic.Substring(0, devices[idev].topic.LastIndexOf('/') + 1) + cbDevices.Text,
-                    Encoding.UTF8.GetBytes("{\"cmd\":\"sp84," + (1024 * (cbSamples.SelectedIndex + 1)).ToString() + "\"}"));
+                    Encoding.UTF8.GetBytes("{\"cmd\":\"sp84," + nsamp.ToString() + "\"}"));
                 devices[idev].pnts = 1024 * (cbSamples.SelectedIndex + 1);
             }
         }
@@ -1040,6 +1061,8 @@ namespace GPM_MQTTClient2
         /// <param name="e">event arguments</param>
         public void VibManager_FormClosed(object sender, FormClosedEventArgs e)
         {
+            ichart = 0;
+            frmVibration = false;
             if (client.IsConnected)
             {
                 client.Unsubscribe(new string[] { "#" });
@@ -1222,7 +1245,23 @@ namespace GPM_MQTTClient2
                 return;
             Console.WriteLine(e.Data);
         }
-        
+
+        private void butConfig_Click(object sender, EventArgs e)
+        {
+            frmConfig = new Configure();
+            frmConfig.Show();
+        }
+
+        private void butDashboard_Click(object sender, EventArgs e)
+        {
+            frmDashboard = new Dashboard();
+            frmDashboard.Show();
+        }
+
+        private void VibManager_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            ichart = -1;
+        }
     }
 
     /// <summary>
