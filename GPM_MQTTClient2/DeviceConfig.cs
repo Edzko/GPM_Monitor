@@ -85,7 +85,8 @@ namespace GPM_MQTTClient2
         //CONFIG_DATA;
         #endregion
 
-        [StructLayout(LayoutKind.Sequential, Pack=1)]
+        
+        [StructLayout(LayoutKind.Sequential, Pack =1)]
         public struct devconfig
         {
             /// <summary>
@@ -217,7 +218,7 @@ namespace GPM_MQTTClient2
             /// <summary> </summary>
             public Byte vib_auto;
             /// <summary> </summary>
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 100)] 
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 100)]
             public Byte[] mqtt_topic;
             /// <summary> </summary>
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 20)]
@@ -228,11 +229,48 @@ namespace GPM_MQTTClient2
             /// <summary> </summary>
             public Byte wifi_update;
             /// <summary> </summary>
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 40)] 
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 40)]
             public UInt32[] canfilter;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size =500)]
+        public struct devstruct
+        {
+            [FieldOffset(0)]
+            public devconfig cfg;
+
+            [FieldOffset(0)]
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 500)]
+            public Byte[] data; 
+        }
+
+
+        static public devstruct devmsg = new devstruct();
+        static public devconfig deviceConfig = new devconfig();
+
         /// <summary> </summary>
-        DeviceConfig() { }
+        internal DeviceConfig() { }
+
+        static public void Parse(string data)
+        {
+            // make sure that the message starts with "SP#"
+
+            int k = 3;
+            int i = 0;
+            while (k<data.Length)
+            {
+                if (data[i] < 'A')
+                    devmsg.data[i] = (Byte)(0x10 * (data[i] - '0'));
+                else
+                    devmsg.data[i] = (Byte)(0x10 * (data[i] - 'A' + 10));
+                i++;
+                if (data[i] < 'A')
+                    devmsg.data[i] = (Byte)(data[i] - '0');
+                else
+                    devmsg.data[i] = (Byte)(data[i] - 'A' + 10);
+                i++;
+                k++;
+            }
+        }
     }
 }

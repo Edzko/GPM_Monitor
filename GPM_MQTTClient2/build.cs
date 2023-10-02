@@ -4,9 +4,9 @@ namespace GPM_MQTTClient2
     public class VersionInfo 
     {  
 		///<summary>Build number</summary>
-        public int build = 134; 
+        public int build = 169; 
 		///<summary>Date and time of build</summary>
-        public string data = "10/02/2023 at  8:53"; 
+        public string data = "10/02/2023 at 16:23"; 
     } 
 } 
 

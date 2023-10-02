@@ -1,0 +1,1 @@
+copy ../Debug/GPM_USBInterface.dll ../GPM_MQTTClient2/bin/Debug/
