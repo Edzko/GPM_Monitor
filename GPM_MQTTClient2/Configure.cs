@@ -13,6 +13,7 @@ using System.IO.Ports;
 using System.Management;
 using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.Win32;
 
 namespace GPM_MQTTClient2
 {
@@ -22,9 +23,8 @@ namespace GPM_MQTTClient2
     public partial class Configure : Form
     {
         static SerialPort port;
-        //internal Thread readThread;
         static bool connected = false;
-        public StringBuilder name;
+        static bool receivedpars = false;
         /// <summary> </summary>
         public class USBDeviceInfo
         {
@@ -101,11 +101,27 @@ namespace GPM_MQTTClient2
         //internal DeviceConfig deviceConfig = new DeviceConfig();
         internal static Configure thisInstance;
 
-        public delegate void ResponseDelegate(string s);
+        public delegate void RespString(string s);
+        public delegate void RespBytes(byte[] s);
+        public delegate void RespStatus(bool s);
 
-        [DllImport(@"GPM_USBInterface.dll", EntryPoint = "Foo", CallingConvention = CallingConvention.StdCall)]
-        public static extern void Foo(string str, ResponseDelegate response);
- 
+        [DllImport(@"GPM_USBInterface.dll", EntryPoint = "SetData", CallingConvention = CallingConvention.StdCall)]
+        public static extern void SetData(byte[] data, RespBytes response);
+
+        [DllImport(@"GPM_USBInterface.dll", EntryPoint = "Get", CallingConvention = CallingConvention.StdCall)]
+        public static extern void GetData(string str, RespBytes response);
+
+        [DllImport(@"GPM_USBInterface.dll", EntryPoint = "GetValue", CallingConvention = CallingConvention.StdCall)]
+        public static extern void GetValue(string str, RespString response);
+
+        [DllImport(@"GPM_USBInterface.dll", EntryPoint = "parseSP", CallingConvention = CallingConvention.StdCall)]
+        public static extern void parseSP(string str, RespStatus response);
+
+
+        /// <summary>
+        /// Registry key that is used to store Application settings for next use.
+        /// </summary>
+        RegistryKey key;
 
         /// <summary>
         /// Constructor method for the GUI class
@@ -114,7 +130,6 @@ namespace GPM_MQTTClient2
         {
             InitializeComponent();
             thisInstance = this;
-            name = new StringBuilder(100);
 
             List<USBDeviceInfo> usbdevices = new List<USBDeviceInfo>();
             ManagementObjectSearcher searcher =
@@ -144,13 +159,16 @@ namespace GPM_MQTTClient2
                     }
                 }
             }
-
+            key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\Magna\MQTTClient");
+            string comname = (string)key.GetValue("COM", "");
+            cbCOMList.Text = comname;
         }
 
         
 
         private void butClose_Click(object sender, EventArgs e)
         {
+            key.SetValue("COM", cbCOMList.Text);
             Close();
         }
 
@@ -179,38 +197,60 @@ namespace GPM_MQTTClient2
 
         private void Connect(int com)
         {
-            Thread readThread = new Thread(Read);
             port = new SerialPort();
 
             // Allow the user to set the appropriate properties.
-            port.PortName = "COM"+devices[com].com.ToString();
+            port.PortName = "COM" + devices[com].com.ToString();
             port.BaudRate = 115200;
             port.Parity = Parity.None;
             port.DataBits = 8;
             port.StopBits = StopBits.One;
-            port.Handshake  = Handshake.None;
+            port.Handshake = Handshake.None;
+
 
             // Set the read/write timeouts
-            port.ReadTimeout = 500;
+            port.ReadTimeout = 500; // SerialPort.InfiniteTimeout;
             port.WriteTimeout = 500;
-
-            port.Open();
-            connected = true;
-            readThread.Start();
+            try {
+                port.Open();
+                connected = true;
+                
+            }
+            catch (IOException ioe) { }
         }
 
-        private static void Read()
+        
+        private void butStore_Click(object sender, EventArgs e)
         {
-            while (connected)
+            GetValue("store", s => { Console.WriteLine(s); });
+        }
+
+        private void butRetrieve_Click(object sender, EventArgs e)
+        {
+            if (cbCOMList.Text == "")
             {
+                MessageBox.Show("Please select interface", "Configure", MessageBoxButtons.OK, MessageBoxIcon.Question);
+                return;
+            }
+            if (!connected)
+            {
+                Connect(cbCOMList.SelectedIndex);
+                receivedpars = false;
+            }
+            if (connected)
+            {
+                port.Write("sp#\r\r".ToCharArray(),0,5);
                 try
                 {
-                    string message = port.ReadLine();
-                    Console.WriteLine(message);
+                    byte[] message = new byte[1500];
+                    int i = port.Read(message,0,1500);
+                    string msg = Encoding.UTF8.GetString(message);
+                    Console.WriteLine(msg);
 
-                    if (message.StartsWith("SP#"))
+                    if (msg.StartsWith("SP#"))
                     {
-                        DeviceConfig.Parse(message);
+                        receivedpars = true;
+                        parseSP(msg, s => { Console.WriteLine(s); });
 
                         thisInstance.BeginInvoke(new MethodInvoker(delegate
                         {
@@ -220,30 +260,13 @@ namespace GPM_MQTTClient2
                 }
                 catch (TimeoutException toe) { }
                 catch (System.IO.IOException ioe) { }
-                catch (Exception e) { }
             }
-        }
-
-        private void butStore_Click(object sender, EventArgs e)
-        {
-            Foo("Input", s =>
+            if (receivedpars)
             {
-                Console.WriteLine(s);
-            });
-        }
-
-        private void butRetrieve_Click(object sender, EventArgs e)
-        {
-            if (!connected) Connect(cbCOMList.SelectedIndex);
-            if (connected)
-            {
-                port.Write("?v\r");
+                GetValue("pm_name", s => { txtName.Text = s; });
+                GetValue("mqtt_topic", s => { txtTopic.Text = s; });
+                GetValue("vib_pnts", s => { });
             }
-        }
-
-        private void butConnect_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void butLoad_Click(object sender, EventArgs e)
@@ -259,7 +282,9 @@ namespace GPM_MQTTClient2
                 {
                     // load deviceConfig
                     BinaryReader reader = new BinaryReader(File.Open(openFileDialog.FileName, FileMode.Open));
-                    reader.Read(DeviceConfig.devmsg.data, 0, 1000);
+                    byte[] data = new byte[1000];
+                    reader.Read(data, 0, 1000);
+                    SetData(data, s => { Console.WriteLine(s); });
                 }
             }
         }
@@ -278,8 +303,10 @@ namespace GPM_MQTTClient2
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     // save deviceConfig
+                    byte[] data = new byte[1000];
+                    GetData("", s => { s.CopyTo(data, 0); });
                     BinaryWriter writer = new BinaryWriter(File.Open(saveFileDialog.FileName, FileMode.Create));
-                    writer.Write(DeviceConfig.devmsg.data, 0, 1000);
+                    writer.Write(data, 0, 1000);
                 }
             }
 
@@ -291,6 +318,31 @@ namespace GPM_MQTTClient2
             {
                 connected = false;
                 port.Close();
+            }
+        }
+
+        private void butUpdate_Click(object sender, EventArgs e)
+        {
+            // Update Firmware
+            if (cbCOMList.Text == "")
+            {
+                MessageBox.Show("Please select interface", "Configure", MessageBoxButtons.OK, MessageBoxIcon.Question);
+                return;
+            }
+            if (connected) port.Close();
+            {
+                using (OpenFileDialog openFileDialog = new OpenFileDialog())
+                {
+                    //openFileDialog.InitialDirectory = "c:\\";
+                    openFileDialog.Filter = "firmware files (*.bin)|*.bin|All files (*.*)|*.*";
+                    openFileDialog.FilterIndex = 1;
+                    openFileDialog.RestoreDirectory = true;
+
+                    if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        System.Diagnostics.Process.Start("CMD.exe", "/C GPM_UpdateLite.exe COM" + devices[cbCOMList.SelectedIndex].com.ToString() + " " + openFileDialog.FileName);
+                    }
+                }
             }
         }
     }

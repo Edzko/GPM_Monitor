@@ -34,6 +34,8 @@
 //		details.
 //
 
+CONFIG_DATA cfgdata;
+
 // CGPMUSBinterfaceApp
 
 BEGIN_MESSAGE_MAP(CGPMUSBinterfaceApp, CWinApp)
@@ -63,23 +65,57 @@ BOOL CGPMUSBinterfaceApp::InitInstance()
 }
 
 
+typedef void(_stdcall* LPEXTFUNCRESPOND) (LPCSTR s);
+typedef void(_stdcall* LPEXTFUNCBYTES) (unsigned char* s);
+
+
 extern "C"
 {
-	__declspec(dllexport) void  GetName(char* name)
+	__declspec(dllexport) void  __stdcall GetValue(const char* name, LPEXTFUNCRESPOND respond)
 	{
-		//strcpy_s(name, 20, (char*)cfgdata.pm_name);
-		strcpy_s(name, 20, "pm_edzko");
+		if (strcmp(name,"pm_name")==0) respond((char*)&cfgdata.pm_name);
+		if (strcmp(name, "mqtt_topic") == 0) respond((char*)&cfgdata.mqtt_topic);
+
+	}
+}
+extern "C"
+{
+	__declspec(dllexport) void __stdcall GetData(const char* str, LPEXTFUNCBYTES respond)
+	{
+		// Input is in str
+		// Put your response in respond()
+		respond(&cfgdata.version);
 	}
 }
 
-typedef void(_stdcall* LPEXTFUNCRESPOND) (LPCSTR s);
-
 extern "C"
 {
-	__declspec(dllexport) void __stdcall Foo(const char* str, LPEXTFUNCRESPOND respond)
+	__declspec(dllexport) void __stdcall SetData(const char* str, LPEXTFUNCRESPOND respond)
 	{
 		// Input is in str
 		// Put your response in respond()
 		respond("HELLO");
+	}
+}
+
+extern "C"
+{
+	__declspec(dllexport) void __stdcall parseSP(const char* str, LPEXTFUNCRESPOND respond)
+	{
+		unsigned char* data = (unsigned char*)&cfgdata.version;
+		if (strncmp(str, "SP#", 3) == 0) {
+			int i = 3, k = 0;
+			while (k < sizeof(cfgdata))
+			{
+				if (str[i] < 'A') data[k] = 16 * (str[i] - '0'); else data[k] = 16 * (str[i] - 'A' + 10);
+				i++;
+				if (str[i] < 'A') data[k] += str[i] - '0'; else data[k] += str[i] - 'A' + 10;
+				i++;
+				k++;
+			}
+
+			respond("OK");
+		} else
+			respond("NOK");
 	}
 }

@@ -79,7 +79,6 @@
     <Compile Include="Dashboard.Designer.cs">
       <DependentUpon>Dashboard.cs</DependentUpon>
     </Compile>
-    <Compile Include="DeviceConfig.cs" />
     <Compile Include="VibManager.cs">
       <SubType>Form</SubType>
     </Compile>

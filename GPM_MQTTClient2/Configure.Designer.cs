@@ -29,28 +29,33 @@ namespace GPM_MQTTClient2
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.butRetrieve = new System.Windows.Forms.Button();
             this.butStore = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.textBox2 = new System.Windows.Forms.TextBox();
+            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.txtTopic = new System.Windows.Forms.TextBox();
+            this.txtName = new System.Windows.Forms.TextBox();
+            this.label22 = new System.Windows.Forms.Label();
+            this.label21 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
             this.txtIP = new System.Windows.Forms.TextBox();
             this.txtSSIDpassword = new System.Windows.Forms.TextBox();
             this.txtSSID = new System.Windows.Forms.TextBox();
-            this.txtTopic = new System.Windows.Forms.TextBox();
-            this.txtName = new System.Windows.Forms.TextBox();
             this.cbSSIDchanged = new System.Windows.Forms.CheckBox();
             this.label20 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.comboBox8 = new System.Windows.Forms.ComboBox();
-            this.comboBox7 = new System.Windows.Forms.ComboBox();
-            this.comboBox6 = new System.Windows.Forms.ComboBox();
-            this.comboBox5 = new System.Windows.Forms.ComboBox();
-            this.comboBox4 = new System.Windows.Forms.ComboBox();
-            this.comboBox3 = new System.Windows.Forms.ComboBox();
-            this.comboBox2 = new System.Windows.Forms.ComboBox();
+            this.cbInterval = new System.Windows.Forms.ComboBox();
+            this.cbAxis = new System.Windows.Forms.ComboBox();
+            this.cbScale = new System.Windows.Forms.ComboBox();
+            this.cbDSampl = new System.Windows.Forms.ComboBox();
+            this.cbWindow = new System.Windows.Forms.ComboBox();
+            this.cbPnts = new System.Windows.Forms.ComboBox();
+            this.cbFreq = new System.Windows.Forms.ComboBox();
             this.label11 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
@@ -60,7 +65,6 @@ namespace GPM_MQTTClient2
             this.label5 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.butConnect = new System.Windows.Forms.Button();
             this.cbCOMList = new System.Windows.Forms.ComboBox();
             this.label19 = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
@@ -69,17 +73,19 @@ namespace GPM_MQTTClient2
             this.label16 = new System.Windows.Forms.Label();
             this.label15 = new System.Windows.Forms.Label();
             this.label14 = new System.Windows.Forms.Label();
-            this.textBox11 = new System.Windows.Forms.TextBox();
-            this.textBox10 = new System.Windows.Forms.TextBox();
-            this.textBox9 = new System.Windows.Forms.TextBox();
-            this.textBox8 = new System.Windows.Forms.TextBox();
-            this.textBox7 = new System.Windows.Forms.TextBox();
+            this.txtMQTTQoS = new System.Windows.Forms.TextBox();
+            this.txtMQTThost = new System.Windows.Forms.TextBox();
+            this.txtMQTTport = new System.Windows.Forms.TextBox();
+            this.txtPassword = new System.Windows.Forms.TextBox();
+            this.txtUsername = new System.Windows.Forms.TextBox();
             this.label13 = new System.Windows.Forms.Label();
             this.butClose = new System.Windows.Forms.Button();
             this.butHelp = new System.Windows.Forms.Button();
             this.butSave = new System.Windows.Forms.Button();
             this.butLoad = new System.Windows.Forms.Button();
             this.butReset = new System.Windows.Forms.Button();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.butUpdate = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -119,15 +125,12 @@ namespace GPM_MQTTClient2
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.txtIP);
-            this.groupBox1.Controls.Add(this.txtSSIDpassword);
-            this.groupBox1.Controls.Add(this.txtSSID);
+            this.groupBox1.Controls.Add(this.textBox2);
+            this.groupBox1.Controls.Add(this.textBox1);
             this.groupBox1.Controls.Add(this.txtTopic);
             this.groupBox1.Controls.Add(this.txtName);
-            this.groupBox1.Controls.Add(this.cbSSIDchanged);
-            this.groupBox1.Controls.Add(this.label20);
-            this.groupBox1.Controls.Add(this.label4);
-            this.groupBox1.Controls.Add(this.label3);
+            this.groupBox1.Controls.Add(this.label22);
+            this.groupBox1.Controls.Add(this.label21);
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Location = new System.Drawing.Point(424, 12);
@@ -137,26 +140,19 @@ namespace GPM_MQTTClient2
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Device Configuration:";
             // 
-            // txtIP
+            // textBox2
             // 
-            this.txtIP.Location = new System.Drawing.Point(112, 154);
-            this.txtIP.Name = "txtIP";
-            this.txtIP.Size = new System.Drawing.Size(189, 20);
-            this.txtIP.TabIndex = 4;
+            this.textBox2.Location = new System.Drawing.Point(112, 122);
+            this.textBox2.Name = "textBox2";
+            this.textBox2.Size = new System.Drawing.Size(189, 20);
+            this.textBox2.TabIndex = 4;
             // 
-            // txtSSIDpassword
+            // textBox1
             // 
-            this.txtSSIDpassword.Location = new System.Drawing.Point(112, 105);
-            this.txtSSIDpassword.Name = "txtSSIDpassword";
-            this.txtSSIDpassword.Size = new System.Drawing.Size(189, 20);
-            this.txtSSIDpassword.TabIndex = 4;
-            // 
-            // txtSSID
-            // 
-            this.txtSSID.Location = new System.Drawing.Point(112, 79);
-            this.txtSSID.Name = "txtSSID";
-            this.txtSSID.Size = new System.Drawing.Size(189, 20);
-            this.txtSSID.TabIndex = 4;
+            this.textBox1.Location = new System.Drawing.Point(112, 96);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(189, 20);
+            this.textBox1.TabIndex = 4;
             // 
             // txtTopic
             // 
@@ -172,42 +168,23 @@ namespace GPM_MQTTClient2
             this.txtName.Size = new System.Drawing.Size(189, 20);
             this.txtName.TabIndex = 4;
             // 
-            // cbSSIDchanged
+            // label22
             // 
-            this.cbSSIDchanged.AutoSize = true;
-            this.cbSSIDchanged.Location = new System.Drawing.Point(112, 131);
-            this.cbSSIDchanged.Name = "cbSSIDchanged";
-            this.cbSSIDchanged.Size = new System.Drawing.Size(93, 17);
-            this.cbSSIDchanged.TabIndex = 3;
-            this.cbSSIDchanged.Text = "WiFi Changed";
-            this.cbSSIDchanged.UseVisualStyleBackColor = true;
+            this.label22.AutoSize = true;
+            this.label22.Location = new System.Drawing.Point(53, 125);
+            this.label22.Name = "label22";
+            this.label22.Size = new System.Drawing.Size(53, 13);
+            this.label22.TabIndex = 2;
+            this.label22.Text = "NTP port:";
             // 
-            // label20
+            // label21
             // 
-            this.label20.AutoSize = true;
-            this.label20.Location = new System.Drawing.Point(56, 157);
-            this.label20.Name = "label20";
-            this.label20.Size = new System.Drawing.Size(50, 13);
-            this.label20.TabIndex = 2;
-            this.label20.Text = "Static IP:";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(26, 108);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(80, 13);
-            this.label4.TabIndex = 2;
-            this.label4.Text = "WiFi Password:";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(47, 82);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(59, 13);
-            this.label3.TabIndex = 2;
-            this.label3.Text = "WiFi SSID:";
+            this.label21.AutoSize = true;
+            this.label21.Location = new System.Drawing.Point(48, 99);
+            this.label21.Name = "label21";
+            this.label21.Size = new System.Drawing.Size(57, 13);
+            this.label21.TabIndex = 2;
+            this.label21.Text = "NTP Host:";
             // 
             // label2
             // 
@@ -218,15 +195,75 @@ namespace GPM_MQTTClient2
             this.label2.TabIndex = 2;
             this.label2.Text = "MQTT Topic:";
             // 
+            // txtIP
+            // 
+            this.txtIP.Location = new System.Drawing.Point(129, 142);
+            this.txtIP.Name = "txtIP";
+            this.txtIP.Size = new System.Drawing.Size(189, 20);
+            this.txtIP.TabIndex = 4;
+            this.toolTip1.SetToolTip(this.txtIP, "When Changing WiFi: Set Static IP. Leave blanc for dynamic IP");
+            // 
+            // txtSSIDpassword
+            // 
+            this.txtSSIDpassword.Location = new System.Drawing.Point(129, 93);
+            this.txtSSIDpassword.Name = "txtSSIDpassword";
+            this.txtSSIDpassword.Size = new System.Drawing.Size(189, 20);
+            this.txtSSIDpassword.TabIndex = 4;
+            // 
+            // txtSSID
+            // 
+            this.txtSSID.Location = new System.Drawing.Point(129, 67);
+            this.txtSSID.Name = "txtSSID";
+            this.txtSSID.Size = new System.Drawing.Size(189, 20);
+            this.txtSSID.TabIndex = 4;
+            // 
+            // cbSSIDchanged
+            // 
+            this.cbSSIDchanged.AutoSize = true;
+            this.cbSSIDchanged.Location = new System.Drawing.Point(129, 119);
+            this.cbSSIDchanged.Name = "cbSSIDchanged";
+            this.cbSSIDchanged.Size = new System.Drawing.Size(93, 17);
+            this.cbSSIDchanged.TabIndex = 3;
+            this.cbSSIDchanged.Text = "WiFi Changed";
+            this.toolTip1.SetToolTip(this.cbSSIDchanged, "Check this box to re-configure the WiFi settings on the device");
+            this.cbSSIDchanged.UseVisualStyleBackColor = true;
+            // 
+            // label20
+            // 
+            this.label20.AutoSize = true;
+            this.label20.Location = new System.Drawing.Point(73, 145);
+            this.label20.Name = "label20";
+            this.label20.Size = new System.Drawing.Size(50, 13);
+            this.label20.TabIndex = 2;
+            this.label20.Text = "Static IP:";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(43, 96);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(80, 13);
+            this.label4.TabIndex = 2;
+            this.label4.Text = "WiFi Password:";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(64, 70);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(59, 13);
+            this.label3.TabIndex = 2;
+            this.label3.Text = "WiFi SSID:";
+            // 
             // groupBox2
             // 
-            this.groupBox2.Controls.Add(this.comboBox8);
-            this.groupBox2.Controls.Add(this.comboBox7);
-            this.groupBox2.Controls.Add(this.comboBox6);
-            this.groupBox2.Controls.Add(this.comboBox5);
-            this.groupBox2.Controls.Add(this.comboBox4);
-            this.groupBox2.Controls.Add(this.comboBox3);
-            this.groupBox2.Controls.Add(this.comboBox2);
+            this.groupBox2.Controls.Add(this.cbInterval);
+            this.groupBox2.Controls.Add(this.cbAxis);
+            this.groupBox2.Controls.Add(this.cbScale);
+            this.groupBox2.Controls.Add(this.cbDSampl);
+            this.groupBox2.Controls.Add(this.cbWindow);
+            this.groupBox2.Controls.Add(this.cbPnts);
+            this.groupBox2.Controls.Add(this.cbFreq);
             this.groupBox2.Controls.Add(this.label11);
             this.groupBox2.Controls.Add(this.label10);
             this.groupBox2.Controls.Add(this.label9);
@@ -234,68 +271,68 @@ namespace GPM_MQTTClient2
             this.groupBox2.Controls.Add(this.label7);
             this.groupBox2.Controls.Add(this.label6);
             this.groupBox2.Controls.Add(this.label5);
-            this.groupBox2.Location = new System.Drawing.Point(13, 94);
+            this.groupBox2.Location = new System.Drawing.Point(12, 199);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(405, 345);
+            this.groupBox2.Size = new System.Drawing.Size(405, 240);
             this.groupBox2.TabIndex = 4;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Data Acquisition Settings:";
             // 
-            // comboBox8
+            // cbInterval
             // 
-            this.comboBox8.FormattingEnabled = true;
-            this.comboBox8.Location = new System.Drawing.Point(116, 195);
-            this.comboBox8.Name = "comboBox8";
-            this.comboBox8.Size = new System.Drawing.Size(121, 21);
-            this.comboBox8.TabIndex = 5;
+            this.cbInterval.FormattingEnabled = true;
+            this.cbInterval.Location = new System.Drawing.Point(116, 195);
+            this.cbInterval.Name = "cbInterval";
+            this.cbInterval.Size = new System.Drawing.Size(121, 21);
+            this.cbInterval.TabIndex = 5;
             // 
-            // comboBox7
+            // cbAxis
             // 
-            this.comboBox7.FormattingEnabled = true;
-            this.comboBox7.Location = new System.Drawing.Point(116, 168);
-            this.comboBox7.Name = "comboBox7";
-            this.comboBox7.Size = new System.Drawing.Size(121, 21);
-            this.comboBox7.TabIndex = 5;
+            this.cbAxis.FormattingEnabled = true;
+            this.cbAxis.Location = new System.Drawing.Point(116, 168);
+            this.cbAxis.Name = "cbAxis";
+            this.cbAxis.Size = new System.Drawing.Size(121, 21);
+            this.cbAxis.TabIndex = 5;
             // 
-            // comboBox6
+            // cbScale
             // 
-            this.comboBox6.FormattingEnabled = true;
-            this.comboBox6.Location = new System.Drawing.Point(116, 141);
-            this.comboBox6.Name = "comboBox6";
-            this.comboBox6.Size = new System.Drawing.Size(121, 21);
-            this.comboBox6.TabIndex = 5;
+            this.cbScale.FormattingEnabled = true;
+            this.cbScale.Location = new System.Drawing.Point(116, 141);
+            this.cbScale.Name = "cbScale";
+            this.cbScale.Size = new System.Drawing.Size(121, 21);
+            this.cbScale.TabIndex = 5;
             // 
-            // comboBox5
+            // cbDSampl
             // 
-            this.comboBox5.FormattingEnabled = true;
-            this.comboBox5.Location = new System.Drawing.Point(116, 114);
-            this.comboBox5.Name = "comboBox5";
-            this.comboBox5.Size = new System.Drawing.Size(121, 21);
-            this.comboBox5.TabIndex = 5;
+            this.cbDSampl.FormattingEnabled = true;
+            this.cbDSampl.Location = new System.Drawing.Point(116, 114);
+            this.cbDSampl.Name = "cbDSampl";
+            this.cbDSampl.Size = new System.Drawing.Size(121, 21);
+            this.cbDSampl.TabIndex = 5;
             // 
-            // comboBox4
+            // cbWindow
             // 
-            this.comboBox4.FormattingEnabled = true;
-            this.comboBox4.Location = new System.Drawing.Point(116, 87);
-            this.comboBox4.Name = "comboBox4";
-            this.comboBox4.Size = new System.Drawing.Size(121, 21);
-            this.comboBox4.TabIndex = 5;
+            this.cbWindow.FormattingEnabled = true;
+            this.cbWindow.Location = new System.Drawing.Point(116, 87);
+            this.cbWindow.Name = "cbWindow";
+            this.cbWindow.Size = new System.Drawing.Size(121, 21);
+            this.cbWindow.TabIndex = 5;
             // 
-            // comboBox3
+            // cbPnts
             // 
-            this.comboBox3.FormattingEnabled = true;
-            this.comboBox3.Location = new System.Drawing.Point(116, 60);
-            this.comboBox3.Name = "comboBox3";
-            this.comboBox3.Size = new System.Drawing.Size(121, 21);
-            this.comboBox3.TabIndex = 5;
+            this.cbPnts.FormattingEnabled = true;
+            this.cbPnts.Location = new System.Drawing.Point(116, 60);
+            this.cbPnts.Name = "cbPnts";
+            this.cbPnts.Size = new System.Drawing.Size(121, 21);
+            this.cbPnts.TabIndex = 5;
             // 
-            // comboBox2
+            // cbFreq
             // 
-            this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Location = new System.Drawing.Point(116, 33);
-            this.comboBox2.Name = "comboBox2";
-            this.comboBox2.Size = new System.Drawing.Size(121, 21);
-            this.comboBox2.TabIndex = 5;
+            this.cbFreq.FormattingEnabled = true;
+            this.cbFreq.Location = new System.Drawing.Point(116, 33);
+            this.cbFreq.Name = "cbFreq";
+            this.cbFreq.Size = new System.Drawing.Size(121, 21);
+            this.cbFreq.TabIndex = 5;
             // 
             // label11
             // 
@@ -371,25 +408,21 @@ namespace GPM_MQTTClient2
             // 
             // groupBox3
             // 
-            this.groupBox3.Controls.Add(this.butConnect);
+            this.groupBox3.Controls.Add(this.txtIP);
             this.groupBox3.Controls.Add(this.cbCOMList);
+            this.groupBox3.Controls.Add(this.txtSSIDpassword);
             this.groupBox3.Controls.Add(this.label19);
+            this.groupBox3.Controls.Add(this.txtSSID);
+            this.groupBox3.Controls.Add(this.label3);
+            this.groupBox3.Controls.Add(this.label4);
+            this.groupBox3.Controls.Add(this.cbSSIDchanged);
+            this.groupBox3.Controls.Add(this.label20);
             this.groupBox3.Location = new System.Drawing.Point(13, 12);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(405, 73);
+            this.groupBox3.Size = new System.Drawing.Size(405, 174);
             this.groupBox3.TabIndex = 5;
             this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "USB Connection:";
-            // 
-            // butConnect
-            // 
-            this.butConnect.Location = new System.Drawing.Point(324, 25);
-            this.butConnect.Name = "butConnect";
-            this.butConnect.Size = new System.Drawing.Size(75, 23);
-            this.butConnect.TabIndex = 2;
-            this.butConnect.Text = "Connect";
-            this.butConnect.UseVisualStyleBackColor = true;
-            this.butConnect.Click += new System.EventHandler(this.butConnect_Click);
+            this.groupBox3.Text = "USB Connection / WiFi Configuration:";
             // 
             // cbCOMList
             // 
@@ -398,6 +431,7 @@ namespace GPM_MQTTClient2
             this.cbCOMList.Name = "cbCOMList";
             this.cbCOMList.Size = new System.Drawing.Size(250, 21);
             this.cbCOMList.TabIndex = 1;
+            this.toolTip1.SetToolTip(this.cbCOMList, "Select USB COM port to device");
             // 
             // label19
             // 
@@ -415,11 +449,11 @@ namespace GPM_MQTTClient2
             this.groupBox4.Controls.Add(this.label16);
             this.groupBox4.Controls.Add(this.label15);
             this.groupBox4.Controls.Add(this.label14);
-            this.groupBox4.Controls.Add(this.textBox11);
-            this.groupBox4.Controls.Add(this.textBox10);
-            this.groupBox4.Controls.Add(this.textBox9);
-            this.groupBox4.Controls.Add(this.textBox8);
-            this.groupBox4.Controls.Add(this.textBox7);
+            this.groupBox4.Controls.Add(this.txtMQTTQoS);
+            this.groupBox4.Controls.Add(this.txtMQTThost);
+            this.groupBox4.Controls.Add(this.txtMQTTport);
+            this.groupBox4.Controls.Add(this.txtPassword);
+            this.groupBox4.Controls.Add(this.txtUsername);
             this.groupBox4.Controls.Add(this.label13);
             this.groupBox4.Controls.Add(this.label12);
             this.groupBox4.Location = new System.Drawing.Point(424, 219);
@@ -474,40 +508,40 @@ namespace GPM_MQTTClient2
             this.label14.TabIndex = 5;
             this.label14.Text = "Port:";
             // 
-            // textBox11
+            // txtMQTTQoS
             // 
-            this.textBox11.Location = new System.Drawing.Point(112, 135);
-            this.textBox11.Name = "textBox11";
-            this.textBox11.Size = new System.Drawing.Size(189, 20);
-            this.textBox11.TabIndex = 4;
+            this.txtMQTTQoS.Location = new System.Drawing.Point(112, 135);
+            this.txtMQTTQoS.Name = "txtMQTTQoS";
+            this.txtMQTTQoS.Size = new System.Drawing.Size(189, 20);
+            this.txtMQTTQoS.TabIndex = 4;
             // 
-            // textBox10
+            // txtMQTThost
             // 
-            this.textBox10.Location = new System.Drawing.Point(112, 109);
-            this.textBox10.Name = "textBox10";
-            this.textBox10.Size = new System.Drawing.Size(189, 20);
-            this.textBox10.TabIndex = 4;
+            this.txtMQTThost.Location = new System.Drawing.Point(112, 109);
+            this.txtMQTThost.Name = "txtMQTThost";
+            this.txtMQTThost.Size = new System.Drawing.Size(189, 20);
+            this.txtMQTThost.TabIndex = 4;
             // 
-            // textBox9
+            // txtMQTTport
             // 
-            this.textBox9.Location = new System.Drawing.Point(112, 83);
-            this.textBox9.Name = "textBox9";
-            this.textBox9.Size = new System.Drawing.Size(189, 20);
-            this.textBox9.TabIndex = 4;
+            this.txtMQTTport.Location = new System.Drawing.Point(112, 83);
+            this.txtMQTTport.Name = "txtMQTTport";
+            this.txtMQTTport.Size = new System.Drawing.Size(189, 20);
+            this.txtMQTTport.TabIndex = 4;
             // 
-            // textBox8
+            // txtPassword
             // 
-            this.textBox8.Location = new System.Drawing.Point(112, 57);
-            this.textBox8.Name = "textBox8";
-            this.textBox8.Size = new System.Drawing.Size(189, 20);
-            this.textBox8.TabIndex = 4;
+            this.txtPassword.Location = new System.Drawing.Point(112, 57);
+            this.txtPassword.Name = "txtPassword";
+            this.txtPassword.Size = new System.Drawing.Size(189, 20);
+            this.txtPassword.TabIndex = 4;
             // 
-            // textBox7
+            // txtUsername
             // 
-            this.textBox7.Location = new System.Drawing.Point(112, 31);
-            this.textBox7.Name = "textBox7";
-            this.textBox7.Size = new System.Drawing.Size(189, 20);
-            this.textBox7.TabIndex = 4;
+            this.txtUsername.Location = new System.Drawing.Point(112, 31);
+            this.txtUsername.Name = "txtUsername";
+            this.txtUsername.Size = new System.Drawing.Size(189, 20);
+            this.txtUsername.TabIndex = 4;
             // 
             // label13
             // 
@@ -572,6 +606,17 @@ namespace GPM_MQTTClient2
             this.butReset.Text = "Reset";
             this.butReset.UseVisualStyleBackColor = true;
             // 
+            // butUpdate
+            // 
+            this.butUpdate.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.butUpdate.Location = new System.Drawing.Point(424, 445);
+            this.butUpdate.Name = "butUpdate";
+            this.butUpdate.Size = new System.Drawing.Size(152, 30);
+            this.butUpdate.TabIndex = 1;
+            this.butUpdate.Text = "Update Firmware";
+            this.butUpdate.UseVisualStyleBackColor = true;
+            this.butUpdate.Click += new System.EventHandler(this.butUpdate_Click);
+            // 
             // Configure
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -585,6 +630,7 @@ namespace GPM_MQTTClient2
             this.Controls.Add(this.butClose);
             this.Controls.Add(this.butReset);
             this.Controls.Add(this.butLoad);
+            this.Controls.Add(this.butUpdate);
             this.Controls.Add(this.butSave);
             this.Controls.Add(this.butStore);
             this.Controls.Add(this.butRetrieve);
@@ -628,15 +674,14 @@ namespace GPM_MQTTClient2
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.TextBox txtIP;
         private System.Windows.Forms.Label label20;
-        private System.Windows.Forms.ComboBox comboBox8;
-        private System.Windows.Forms.ComboBox comboBox7;
-        private System.Windows.Forms.ComboBox comboBox6;
-        private System.Windows.Forms.ComboBox comboBox5;
-        private System.Windows.Forms.ComboBox comboBox4;
-        private System.Windows.Forms.ComboBox comboBox3;
-        private System.Windows.Forms.ComboBox comboBox2;
+        private System.Windows.Forms.ComboBox cbInterval;
+        private System.Windows.Forms.ComboBox cbAxis;
+        private System.Windows.Forms.ComboBox cbScale;
+        private System.Windows.Forms.ComboBox cbDSampl;
+        private System.Windows.Forms.ComboBox cbWindow;
+        private System.Windows.Forms.ComboBox cbPnts;
+        private System.Windows.Forms.ComboBox cbFreq;
         private System.Windows.Forms.GroupBox groupBox3;
-        private System.Windows.Forms.Button butConnect;
         private System.Windows.Forms.ComboBox cbCOMList;
         private System.Windows.Forms.Label label19;
         private System.Windows.Forms.GroupBox groupBox4;
@@ -645,16 +690,22 @@ namespace GPM_MQTTClient2
         private System.Windows.Forms.Label label16;
         private System.Windows.Forms.Label label15;
         private System.Windows.Forms.Label label14;
-        private System.Windows.Forms.TextBox textBox11;
-        private System.Windows.Forms.TextBox textBox10;
-        private System.Windows.Forms.TextBox textBox9;
-        private System.Windows.Forms.TextBox textBox8;
-        private System.Windows.Forms.TextBox textBox7;
+        private System.Windows.Forms.TextBox txtMQTTQoS;
+        private System.Windows.Forms.TextBox txtMQTThost;
+        private System.Windows.Forms.TextBox txtMQTTport;
+        private System.Windows.Forms.TextBox txtPassword;
+        private System.Windows.Forms.TextBox txtUsername;
         private System.Windows.Forms.Label label13;
         private System.Windows.Forms.Button butClose;
         private System.Windows.Forms.Button butHelp;
         private System.Windows.Forms.Button butSave;
         private System.Windows.Forms.Button butLoad;
         private System.Windows.Forms.Button butReset;
+        private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.Label label22;
+        private System.Windows.Forms.Label label21;
+        private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.Button butUpdate;
     }
 }
